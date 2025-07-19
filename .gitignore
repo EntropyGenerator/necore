@@ -1,0 +1,7 @@
+# Golang
+
+.go/
+
+# NixOS
+
+.direnv/
