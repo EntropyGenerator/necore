@@ -1,9 +1,26 @@
 package routes
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"necore/app"
 
-func LoadRoutes(app *fiber.App) {
-	api := app.Group("/necore")
+	"github.com/gofiber/fiber/v2"
+)
 
-	api.Get("/slogan", sloganHandler)
+type routerInstance struct {
+	Router *fiber.Router
+}
+
+var instance *routerInstance
+
+func init() {
+	app := app.GetInstance()
+	api := app.App.Group("/necore")
+
+	instance = &routerInstance{
+		Router: &api,
+	}
+}
+
+func GetInstance() *routerInstance {
+	return instance
 }

@@ -1,14 +1,11 @@
 package main
 
 import (
-	"log"
-	"necore/routes"
-
-	"github.com/gofiber/fiber/v2"
+	"necore/app"
+	"necore/routes/slogan"
 )
 
 func main() {
-	app := fiber.New()
-	routes.LoadRoutes(app)
-	log.Fatal(app.Listen(":3000"))
+	slogan.Load()
+	app.Start()
 }

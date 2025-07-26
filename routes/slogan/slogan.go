@@ -1,7 +1,8 @@
-package routes
+package slogan
 
 import (
 	"math/rand"
+	"necore/routes"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -25,4 +26,9 @@ func sloganHandler(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"slogan": slogans[randomIndex],
 	})
+}
+
+func Load() {
+	router := routes.GetInstance()
+	(*router.Router).Get("/slogan", sloganHandler)
 }

@@ -8,7 +8,7 @@ pkgs.mkShell {
     gopls
     delve
     gotools
-
+    sqlite
   ];
   shellHook = ''
     # 设置 GOPATH 和 GOBIN
