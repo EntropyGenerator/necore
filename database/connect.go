@@ -1,7 +1,7 @@
 package database
 
 import (
-	"necore/database/model"
+	"necore/model"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -9,11 +9,11 @@ import (
 
 func ConnectSqlite() {
 	var err error
-	DB, err = gorm.Open(sqlite.Open("database.sqlite3"), &gorm.Config{})
+	instance.Database, err = gorm.Open(sqlite.Open("database.sqlite3"), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
 
 	// Migrate the schema
-	DB.AutoMigrate(&model.User{})
+	instance.Database.AutoMigrate(&model.User{})
 }

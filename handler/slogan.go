@@ -1,4 +1,4 @@
-package slogan
+package handler
 
 import (
 	"math/rand"

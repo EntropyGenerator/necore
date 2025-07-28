@@ -1,10 +1,19 @@
 package database
 
-import "gorm.io/gorm"
+import (
+	"context"
+
+	"gorm.io/gorm"
+)
+
+type DB struct {
+	Database *gorm.DB
+	Context  *context.Context
+}
 
 // DB gorm connector
-var DB *gorm.DB
+var instance *DB
 
-func GetInstance() *gorm.DB {
-	return DB
+func GetInstance() *DB {
+	return instance
 }

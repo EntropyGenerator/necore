@@ -2,7 +2,7 @@ package router
 
 import (
 	"necore/app"
-	"necore/router/slogan"
+	"necore/handler"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -27,6 +27,6 @@ func GetInstance() *routerInstance {
 }
 
 func SetupRoutes() {
-	(*instance.Router).Get("/slogan", slogan.SloganHandler)
+	(*instance.Router).Get("/slogan", handler.SloganHandler)
 
 }
