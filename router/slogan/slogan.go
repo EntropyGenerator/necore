@@ -2,7 +2,6 @@ package slogan
 
 import (
 	"math/rand"
-	"necore/routes"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -21,14 +20,9 @@ var slogans = []string{
 	`天天看个锤子学妹学姐，二次元老婆不香嘛 —— Aircraft`,
 }
 
-func sloganHandler(c *fiber.Ctx) error {
+func SloganHandler(c *fiber.Ctx) error {
 	randomIndex := rand.Intn(len(slogans))
 	return c.JSON(fiber.Map{
 		"slogan": slogans[randomIndex],
 	})
-}
-
-func Load() {
-	router := routes.GetInstance()
-	(*router.Router).Get("/slogan", sloganHandler)
 }

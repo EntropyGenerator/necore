@@ -2,10 +2,10 @@ package main
 
 import (
 	"necore/app"
-	"necore/routes/slogan"
+	"necore/router"
 )
 
 func main() {
-	slogan.Load()
+	router.SetupRoutes()
 	app.Start()
 }
