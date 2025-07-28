@@ -5,3 +5,7 @@
 # NixOS
 
 .direnv/
+
+# Database
+
+database.sqlite3
