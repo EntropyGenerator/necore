@@ -27,6 +27,10 @@ func GetInstance() *routerInstance {
 }
 
 func SetupRoutes() {
-	(*instance.Router).Get("/slogan", handler.SloganHandler)
+	router := instance.Router
+	(*router).Get("/slogan", handler.SloganHandler)
 
+	authGroup := (*router).Group("/auth")
+	authGroup.Post("/login", handler.Login)
+	authGroup.Post("/register", handler.AddUser)
 }
