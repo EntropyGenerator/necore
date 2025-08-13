@@ -2,12 +2,9 @@ package handler
 
 import (
 	"errors"
-	"log"
-	"necore/config"
 	"necore/database"
 	"necore/model"
-	"strconv"
-	"time"
+	"necore/util"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -15,8 +12,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// CheckPasswordHash compare password with hash
-func CheckPasswordHash(password, hash string) bool {
+// checkPasswordHash compare password with hash
+func checkPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
 }
@@ -24,18 +21,6 @@ func CheckPasswordHash(password, hash string) bool {
 func hashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	return string(bytes), err
-}
-
-func validToken(t *jwt.Token, id string) bool {
-	n, err := strconv.Atoi(id)
-	if err != nil {
-		return false
-	}
-
-	claims := t.Claims.(jwt.MapClaims)
-	uid := int(claims["user_id"].(float64))
-
-	return uid == n
 }
 
 func getUserByUsername(u string) (*model.User, error) {
@@ -47,10 +32,11 @@ func getUserByUsername(u string) (*model.User, error) {
 		}
 		return nil, err
 	}
+
 	return &user, nil
 }
 
-func addUser(username string, password string) error {
+func addUserByUsername(username string, password string) error {
 	db := database.GetInstance()
 	user := model.User{
 		Username: username,
@@ -59,8 +45,7 @@ func addUser(username string, password string) error {
 	return db.Create(&user).Error
 }
 
-// func addUser(username string, password string) {
-// }
+// Handlers
 
 func Login(c *fiber.Ctx) error {
 	// Parse Request Body
@@ -68,59 +53,65 @@ func Login(c *fiber.Ctx) error {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	}
-	type UserData struct {
-		Username   string
-		Password   string
-		Group      string
-		Department string
-	}
 	input := new(LoginInput)
-	log.Println(string(c.Body()))
 	if err := c.BodyParser(&input); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Error on login request", "err": err})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Error on login request", "err": err})
 	}
 
 	// Get User
-	var userData UserData
+
 	userModel, err := new(model.User), *new(error)
 	userModel, err = getUserByUsername(input.Username)
 
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Internal Server Error", "err": err})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal Server Error", "err": err})
 	} else if userModel == nil {
-		CheckPasswordHash(input.Password, "")
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "Invalid identity or password", "err": err})
-	} else {
-		userData = UserData{
-			Username:   userModel.Username,
-			Password:   userModel.Password,
-			Group:      userModel.Group,
-			Department: userModel.Department,
-		}
+		checkPasswordHash(input.Password, "")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid identity or password", "err": err})
 	}
 
 	// Check Password
-	if !CheckPasswordHash(input.Password, userData.Password) {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "Invalid identity or password", "data": nil})
+	if !checkPasswordHash(input.Password, userModel.Password) {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid identity or password"})
 	}
 
 	// Token
-	token := jwt.New(jwt.SigningMethodHS256)
-
-	claims := token.Claims.(jwt.MapClaims)
-	claims["username"] = userData.Username
-	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
-
-	t, err := token.SignedString([]byte(config.Config("SECRET")))
+	t, err := util.CreateToken(*userModel)
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
 	// DEBUG
-	return c.JSON(fiber.Map{"status": "success", "message": "Success login", "data": t})
+	type UserInfo struct {
+		Username   string `json:"username"`
+		Group      string `json:"group"`
+		Department string `json:"department"`
+	}
+	userInfo := UserInfo{
+		Username:   userModel.Username,
+		Group:      userModel.Group,
+		Department: userModel.Department,
+	}
+	return c.JSON(fiber.Map{
+		"token": t,
+		"user":  userInfo,
+	})
 }
 
 func AddUser(c *fiber.Ctx) error {
+	// Check if user is admin
+	token := c.Locals("user").(*jwt.Token)
+	groups := util.GetUserGroupsFromToken(token)
+	var isAdmin bool = false
+	for _, g := range groups {
+		if g == "admin" {
+			isAdmin = true
+		}
+	}
+	if !isAdmin {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
+	}
+
 	// Parse body
 	type NewUser struct {
 		Username string `json:"username"`
@@ -128,14 +119,14 @@ func AddUser(c *fiber.Ctx) error {
 	}
 	user := new(NewUser)
 	if err := c.BodyParser(user); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Review your input", "err": err})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Review your input", "err": err})
 	}
 
 	// Hash Password
 	hash, err := hashPassword(user.Password)
-	if addUser(user.Username, hash) != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Internal Server Error", "err": err})
+	if addUserByUsername(user.Username, hash) != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal Server Error", "err": err})
 	}
 
-	return c.JSON(fiber.Map{"status": "success", "message": "Success add user", "data": nil})
+	return c.JSON(fiber.Map{})
 }

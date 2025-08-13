@@ -3,6 +3,7 @@ package router
 import (
 	"necore/app"
 	"necore/handler"
+	"necore/middleware"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -32,5 +33,5 @@ func SetupRoutes() {
 
 	authGroup := (*router).Group("/auth")
 	authGroup.Post("/login", handler.Login)
-	authGroup.Post("/register", handler.AddUser)
+	authGroup.Post("/register", middleware.AuthNeeded(), handler.AddUser)
 }
