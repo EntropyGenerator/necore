@@ -119,12 +119,8 @@ func DeleteUserByUsername(username string) error {
 	return db.Where(&model.User{Username: username}).Delete(&model.User{}).Error
 }
 
-func CheckUserPassword(username string, password string) bool {
-	user, err := GetUserByUsername(username)
-	if err != nil {
-		return false
-	}
-	return checkPasswordHash(password, user.Password)
+func CheckUserPassword(input string, password string) bool {
+	return checkPasswordHash(input, password)
 }
 
 func UpdateUserPassword(username string, password string) error {
