@@ -2,8 +2,8 @@ package main
 
 import (
 	"necore/app"
+	"necore/controller/router"
 	"necore/database"
-	"necore/router"
 )
 
 func main() {

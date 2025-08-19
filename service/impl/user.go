@@ -1,0 +1,139 @@
+package impl
+
+import (
+	"errors"
+	"necore/config"
+	"necore/database"
+	"necore/model"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/tidwall/gjson"
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
+)
+
+// Hash
+
+func checkPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
+
+func hashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	return string(bytes), err
+}
+
+// Token
+
+func CreateToken(u model.User) (string, error) {
+	token := jwt.New(jwt.SigningMethodHS256)
+	claims := token.Claims.(jwt.MapClaims)
+	claims["username"] = u.Username
+	claims["group"] = u.Group
+	claims["department"] = u.Department
+	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
+	t, err := token.SignedString([]byte(config.Config("SECRET")))
+	return t, err
+}
+
+func GetUsernameFromToken(t *jwt.Token) string {
+	return t.Claims.(jwt.MapClaims)["username"].(string)
+}
+
+func GetUserGroupsFromToken(t *jwt.Token) []string {
+	claims := t.Claims.(jwt.MapClaims)["group"]
+	if claims == nil {
+		return []string{}
+	}
+
+	gjsonResult := gjson.Get(claims.(string), "@this")
+	var result []string
+	for _, value := range gjsonResult.Array() {
+		result = append(result, value.String())
+	}
+
+	return result
+}
+
+func GetUserDepartmentsFromToken(t *jwt.Token) []string {
+	claims := t.Claims.(jwt.MapClaims)["department"]
+	if claims == nil {
+		return []string{}
+	}
+
+	gjsonResult := gjson.Get(claims.(string), "@this")
+	var result []string
+	for _, value := range gjsonResult.Array() {
+		result = append(result, value.String())
+	}
+
+	return result
+}
+
+func IsUserInGroup(t *jwt.Token, group string) bool {
+	groups := GetUserGroupsFromToken(t)
+	for _, g := range groups {
+		if g == group {
+			return true
+		}
+	}
+	return false
+}
+
+// Database
+
+func GetUserByUsername(u string) (*model.User, error) {
+	db := database.GetInstance()
+	var user model.User
+	if err := db.Where(&model.User{Username: u}).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func AddUserByUsername(username string, password string) error {
+	hash, _ := hashPassword(password)
+	db := database.GetInstance()
+	user := model.User{
+		Username: username,
+		Password: hash,
+	}
+	return db.Create(&user).Error
+}
+
+func GetAllUsers() ([]model.User, error) {
+	db := database.GetInstance()
+	var users []model.User
+	err := db.Find(&users).Error
+	return users, err
+}
+
+func DeleteUserByUsername(username string) error {
+	db := database.GetInstance()
+	return db.Where(&model.User{Username: username}).Delete(&model.User{}).Error
+}
+
+func CheckUserPassword(username string, password string) bool {
+	user, err := GetUserByUsername(username)
+	if err != nil {
+		return false
+	}
+	return checkPasswordHash(password, user.Password)
+}
+
+func UpdateUserPassword(username string, password string) error {
+	hash, _ := hashPassword(password)
+	db := database.GetInstance()
+	return db.Model(&model.User{Username: username}).Update("Password", hash).Error
+}
+
+func UpdateUserInfo(username string, group string, department string) error {
+	db := database.GetInstance()
+	return db.Model(&model.User{Username: username}).Updates(model.User{Group: group, Department: department}).Error
+}
