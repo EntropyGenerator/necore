@@ -42,14 +42,14 @@ func Login(c *fiber.Ctx) error {
 
 	// DEBUG
 	type UserInfo struct {
-		Username   string `json:"username"`
-		Group      string `json:"group"`
-		Department string `json:"department"`
+		Username string `json:"username"`
+		Group    string `json:"group"`
+		Tags     string `json:"tags"`
 	}
 	userInfo := UserInfo{
-		Username:   userModel.Username,
-		Group:      userModel.Group,
-		Department: userModel.Department,
+		Username: userModel.Username,
+		Group:    userModel.Group,
+		Tags:     userModel.Tags,
 	}
 	return c.JSON(fiber.Map{
 		"token": t,
