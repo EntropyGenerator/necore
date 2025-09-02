@@ -35,9 +35,11 @@ func SetupRoutes() {
 	authGroup.Post("/login", handler.Login)
 	authGroup.Post("/register", middleware.AuthNeeded(), handler.AddUser)
 	authGroup.Get("/user/:id", handler.GetUserInfo)
+	authGroup.Get("/avatar/:id", handler.GetUserAvatar)
 	authGroup.Get("/userlist", handler.GetUserList)
 	authGroup.Delete("/user/:id", middleware.AuthNeeded(), handler.DeleteUser)
 	authGroup.Post("/password", middleware.AuthNeeded(), handler.UpdateUserPassword)
+	authGroup.Post("/avatar", middleware.AuthNeeded(), handler.UpdateUserAvatar)
 	authGroup.Patch("/user", middleware.AuthNeeded(), handler.UpdateUserInfo)
 	authGroup.Post("/logout", middleware.AuthNeeded(), handler.Logout)
 }
