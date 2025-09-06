@@ -32,6 +32,7 @@ func SetupRoutes() {
 	(*router).Get("/slogan", handler.SloganHandler)
 
 	authGroup := (*router).Group("/auth")
+	authGroup.Get("/status", middleware.AuthNeeded(), handler.GetStatus)
 	authGroup.Post("/login", handler.Login)
 	authGroup.Post("/register", middleware.AuthNeeded(), handler.AddUser)
 	authGroup.Get("/user/:id", handler.GetUserInfo)

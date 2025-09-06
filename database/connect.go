@@ -17,6 +17,7 @@ func ConnectSqlite() {
 	db.AutoMigrate(
 		&model.User{},
 		&model.UserAvatar{},
+		&model.Article{},
 	)
 
 	instance = db

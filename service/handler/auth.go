@@ -81,3 +81,7 @@ func AddUser(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{})
 }
+
+func GetStatus(c *fiber.Ctx) error {
+	return c.JSON(fiber.Map{"status": "alive"})
+}
