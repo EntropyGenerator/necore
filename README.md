@@ -6,6 +6,8 @@ Backend of [neco](https://github.com/EntropyGenerator/neco), NMO Ecosystem.
 
 Same as a golang project.
 
+We provide direnv for development environment.
+
 ## Database
 
 Currently we use sqlite3 since it's lightweight and easy to backup.
