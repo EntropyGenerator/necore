@@ -9,3 +9,8 @@
 # Database
 
 database.sqlite3
+
+# Contents
+
+contents/*
+!contents/.gitkeep

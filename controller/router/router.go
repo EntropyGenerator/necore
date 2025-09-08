@@ -43,4 +43,14 @@ func SetupRoutes() {
 	authGroup.Post("/avatar", middleware.AuthNeeded(), handler.UpdateUserAvatar)
 	authGroup.Patch("/user", middleware.AuthNeeded(), handler.UpdateUserInfo)
 	authGroup.Post("/logout", middleware.AuthNeeded(), handler.Logout)
+
+	articleGroup := (*router).Group("/news")
+	articleGroup.Get("/total/:target", handler.GetArticleCountByCategory)
+	articleGroup.Post("/list", handler.GetArticleList)
+	articleGroup.Get("/detail/:id", handler.GetArticleById)
+	articleGroup.Patch("/:id", middleware.AuthNeeded(), handler.UpdateArticle)
+	articleGroup.Post("/upload/:id", middleware.AuthNeeded(), handler.UploadArticleFile)
+	articleGroup.Delete("/upload/:id", middleware.AuthNeeded(), handler.DeleteArticleFile)
+	articleGroup.Post("/create", middleware.AuthNeeded(), handler.CreateArticle)
+	articleGroup.Delete("/:id", middleware.AuthNeeded(), handler.DeleteArticle)
 }
