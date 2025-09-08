@@ -8,9 +8,9 @@ Same as a golang project. `go run dev` for development, `go build` for productio
 
 We provide direnv for development environment.
 
-## Database
+## Database and Backup
 
-Currently we use sqlite3 since it's lightweight and easy to backup.
+Currently we use sqlite3 since it's lightweight and easy to backup. It's stored in `./database.sqlite3`.
 
 We store article contents in `./contents/{id}/`.
 
