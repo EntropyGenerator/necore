@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/tidwall/gjson"
 )
 
 // Handlers
@@ -40,15 +41,19 @@ func Login(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	// DEBUG
+	gjsonResult := gjson.Get(userModel.Group, "@this")
+	var groups []string
+	for _, value := range gjsonResult.Array() {
+		groups = append(groups, value.String())
+	}
 	type UserInfo struct {
-		Username string `json:"username"`
-		Group    string `json:"group"`
-		Tags     string `json:"tags"`
+		Username string   `json:"username"`
+		Group    []string `json:"group"`
+		Tags     string   `json:"tags"`
 	}
 	userInfo := UserInfo{
 		Username: userModel.Username,
-		Group:    userModel.Group,
+		Group:    groups,
 		Tags:     userModel.Tags,
 	}
 	return c.JSON(fiber.Map{

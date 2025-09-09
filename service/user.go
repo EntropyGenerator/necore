@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/tidwall/gjson"
 )
 
 func GetUserInfo(c *fiber.Ctx) error {
@@ -22,24 +23,30 @@ func GetUserInfo(c *fiber.Ctx) error {
 	if err != nil || userModel == nil {
 		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
 	}
+
+	gjsonResult := gjson.Get(userModel.Group, "@this")
+	var groups []string
+	for _, value := range gjsonResult.Array() {
+		groups = append(groups, value.String())
+	}
 	type UserInfo struct {
-		Username string `json:"username"`
-		Group    string `json:"group"`
-		Tags     string `json:"tags"`
+		Username string   `json:"username"`
+		Group    []string `json:"group"`
+		Tags     string   `json:"tags"`
 	}
 	return c.JSON(fiber.Map{
 		"user": UserInfo{
 			Username: userModel.Username,
-			Group:    userModel.Group,
+			Group:    groups,
 			Tags:     userModel.Tags,
 		}})
 }
 
 func GetUserList(c *fiber.Ctx) error {
 	type UserInfo struct {
-		Username string `json:"username"`
-		Group    string `json:"group"`
-		Tags     string `json:"Tags"`
+		Username string   `json:"username"`
+		Group    []string `json:"group"`
+		Tags     string   `json:"Tags"`
 	}
 	users, err := dao.GetAllUsers()
 	if err != nil {
@@ -47,9 +54,14 @@ func GetUserList(c *fiber.Ctx) error {
 	}
 	userinfos := make([]UserInfo, len(users))
 	for i, user := range users {
+		gjsonResult := gjson.Get(user.Group, "@this")
+		var groups []string
+		for _, value := range gjsonResult.Array() {
+			groups = append(groups, value.String())
+		}
 		userinfos[i] = UserInfo{
 			Username: user.Username,
-			Group:    user.Group,
+			Group:    groups,
 			Tags:     user.Tags,
 		}
 	}
