@@ -95,8 +95,12 @@ func AddUser(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Review your input", "err": err})
 	}
 
-	if dao.AddUserByUsername(user.Username, user.Password) != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal Server Error"})
+	if err := dao.AddUserByUsername(user.Username, user.Password); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err})
+	}
+
+	if err := dao.UpdateUserAvatar(user.Username, ""); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err})
 	}
 
 	return c.JSON(fiber.Map{})
