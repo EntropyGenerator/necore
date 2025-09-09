@@ -1,10 +1,10 @@
-package handler
+package service
 
 import (
 	"encoding/json"
 	"fmt"
+	"necore/dao"
 	"necore/model"
-	"necore/service/impl"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
@@ -15,15 +15,15 @@ import (
 func CreateArticle(c *fiber.Ctx) error {
 	// Check if user is admin or news_admin
 	token := c.Locals("user").(*jwt.Token)
-	isAdmin := impl.IsUserInGroup(token, "admin")
-	isNewsAdmin := impl.IsUserInGroup(token, "news_admin")
+	isAdmin := dao.IsUserInGroup(token, "admin")
+	isNewsAdmin := dao.IsUserInGroup(token, "news_admin")
 	if !isAdmin && isNewsAdmin {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
 	}
 
 	// Create new article
 	id := uuid.New().String()
-	err := impl.CreateArticle(id)
+	err := dao.CreateArticle(id)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err,
@@ -37,8 +37,8 @@ func CreateArticle(c *fiber.Ctx) error {
 func UpdateArticle(c *fiber.Ctx) error {
 	// Check if user is admin or news_admin
 	token := c.Locals("user").(*jwt.Token)
-	isAdmin := impl.IsUserInGroup(token, "admin")
-	isNewsAdmin := impl.IsUserInGroup(token, "news_admin")
+	isAdmin := dao.IsUserInGroup(token, "admin")
+	isNewsAdmin := dao.IsUserInGroup(token, "news_admin")
 	if !isAdmin && isNewsAdmin {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
 	}
@@ -84,7 +84,7 @@ func UpdateArticle(c *fiber.Ctx) error {
 		Content:  string(newContents),
 	}
 
-	if err := impl.UpdateArticle(newArticle); err != nil {
+	if err := dao.UpdateArticle(newArticle); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err})
 	}
 
@@ -94,7 +94,7 @@ func UpdateArticle(c *fiber.Ctx) error {
 func GetArticleById(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	article, err := impl.GetArticle(id)
+	article, err := dao.GetArticle(id)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err})
 	}
@@ -136,7 +136,7 @@ func GetArticleById(c *fiber.Ctx) error {
 func GetArticleCountByCategory(c *fiber.Ctx) error {
 	category := c.Params("target")
 	// target: "information" | "magazine" | "notice" | "activity" | "document"
-	count, err := impl.GetArticleCountByCategory(category)
+	count, err := dao.GetArticleCountByCategory(category)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err})
 	}
@@ -154,7 +154,7 @@ func GetArticleList(c *fiber.Ctx) error {
 	if err := c.BodyParser(payload); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err})
 	}
-	articles, err := impl.GetArticleList(payload.Target, payload.Page, payload.PageSize, payload.Pin)
+	articles, err := dao.GetArticleList(payload.Target, payload.Page, payload.PageSize, payload.Pin)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err})
 	}
@@ -185,8 +185,8 @@ func GetArticleList(c *fiber.Ctx) error {
 func UploadArticleFile(c *fiber.Ctx) error {
 	// Check if user is admin or news_admin
 	token := c.Locals("user").(*jwt.Token)
-	isAdmin := impl.IsUserInGroup(token, "admin")
-	isNewsAdmin := impl.IsUserInGroup(token, "news_admin")
+	isAdmin := dao.IsUserInGroup(token, "admin")
+	isNewsAdmin := dao.IsUserInGroup(token, "news_admin")
 	if !isAdmin && isNewsAdmin {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
 	}
@@ -208,8 +208,8 @@ func UploadArticleFile(c *fiber.Ctx) error {
 func DeleteArticleFile(c *fiber.Ctx) error {
 	// Check if user is admin or news_admin
 	token := c.Locals("user").(*jwt.Token)
-	isAdmin := impl.IsUserInGroup(token, "admin")
-	isNewsAdmin := impl.IsUserInGroup(token, "news_admin")
+	isAdmin := dao.IsUserInGroup(token, "admin")
+	isNewsAdmin := dao.IsUserInGroup(token, "news_admin")
 	if !isAdmin && isNewsAdmin {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
 	}
@@ -231,14 +231,14 @@ func DeleteArticleFile(c *fiber.Ctx) error {
 func DeleteArticle(c *fiber.Ctx) error {
 	// Check if user is admin or news_admin
 	token := c.Locals("user").(*jwt.Token)
-	isAdmin := impl.IsUserInGroup(token, "admin")
-	isNewsAdmin := impl.IsUserInGroup(token, "news_admin")
+	isAdmin := dao.IsUserInGroup(token, "admin")
+	isNewsAdmin := dao.IsUserInGroup(token, "news_admin")
 	if !isAdmin && isNewsAdmin {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
 	}
 
 	id := c.Params("id")
-	if err := impl.DeleteArticle(id); err != nil {
+	if err := dao.DeleteArticle(id); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err})
 	}
 	if err := os.RemoveAll(fmt.Sprintf("./contents/%s", id)); err != nil {

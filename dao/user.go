@@ -1,7 +1,8 @@
-package impl
+package dao
 
 import (
 	"errors"
+	"log"
 	"necore/config"
 	"necore/database"
 	"necore/model"
@@ -21,8 +22,14 @@ func checkPasswordHash(password, hash string) bool {
 }
 
 func hashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 12)
 	return string(bytes), err
+}
+
+func DebugTestPassword() {
+	password := "test"
+	hash, _ := hashPassword(password)
+	log.Println(`Test Password "test":`, hash)
 }
 
 // Token
