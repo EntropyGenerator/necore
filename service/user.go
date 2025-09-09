@@ -24,45 +24,74 @@ func GetUserInfo(c *fiber.Ctx) error {
 		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
 	}
 
+	type TagEntity struct {
+		Text     string `json:"text"`
+		Color    string `json:"color"`
+		TagColor string `json:"tagColor"`
+	}
+	type UserInfo struct {
+		Username string      `json:"username"`
+		Group    []string    `json:"group"`
+		Tags     []TagEntity `json:"tags"`
+	}
 	gjsonResult := gjson.Get(userModel.Group, "@this")
 	var groups []string
 	for _, value := range gjsonResult.Array() {
 		groups = append(groups, value.String())
 	}
-	type UserInfo struct {
-		Username string   `json:"username"`
-		Group    []string `json:"group"`
-		Tags     string   `json:"tags"`
+	gjsonResult = gjson.Get(userModel.Tags, "@this")
+	var tags []TagEntity
+	for _, value := range gjsonResult.Array() {
+		tags = append(tags, TagEntity{
+			Text:     value.Get("text").String(),
+			Color:    value.Get("color").String(),
+			TagColor: value.Get("tagColor").String(),
+		})
 	}
 	return c.JSON(fiber.Map{
 		"user": UserInfo{
 			Username: userModel.Username,
 			Group:    groups,
-			Tags:     userModel.Tags,
+			Tags:     tags,
 		}})
 }
 
 func GetUserList(c *fiber.Ctx) error {
+	type TagEntity struct {
+		Text     string `json:"text"`
+		Color    string `json:"color"`
+		TagColor string `json:"tagColor"`
+	}
 	type UserInfo struct {
-		Username string   `json:"username"`
-		Group    []string `json:"group"`
-		Tags     string   `json:"Tags"`
+		Username string      `json:"username"`
+		Group    []string    `json:"group"`
+		Tags     []TagEntity `json:"tags"`
 	}
 	users, err := dao.GetAllUsers()
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Internal server error"})
 	}
 	userinfos := make([]UserInfo, len(users))
+
 	for i, user := range users {
 		gjsonResult := gjson.Get(user.Group, "@this")
 		var groups []string
 		for _, value := range gjsonResult.Array() {
 			groups = append(groups, value.String())
 		}
+		gjsonResult = gjson.Get(user.Tags, "@this")
+		var tags []TagEntity
+		for _, value := range gjsonResult.Array() {
+			tags = append(tags, TagEntity{
+				Text:     value.Get("text").String(),
+				Color:    value.Get("color").String(),
+				TagColor: value.Get("tagColor").String(),
+			})
+		}
 		userinfos[i] = UserInfo{
 			Username: user.Username,
 			Group:    groups,
-			Tags:     user.Tags,
+			Tags:     tags,
 		}
 	}
 	return c.JSON(fiber.Map{

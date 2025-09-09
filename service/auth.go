@@ -41,20 +41,35 @@ func Login(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
+	// User Info
+	type TagEntity struct {
+		Text     string `json:"text"`
+		Color    string `json:"color"`
+		TagColor string `json:"tagColor"`
+	}
+	type UserInfo struct {
+		Username string      `json:"username"`
+		Group    []string    `json:"group"`
+		Tags     []TagEntity `json:"tags"`
+	}
 	gjsonResult := gjson.Get(userModel.Group, "@this")
 	var groups []string
 	for _, value := range gjsonResult.Array() {
 		groups = append(groups, value.String())
 	}
-	type UserInfo struct {
-		Username string   `json:"username"`
-		Group    []string `json:"group"`
-		Tags     string   `json:"tags"`
+	gjsonResult = gjson.Get(userModel.Tags, "@this")
+	var tags []TagEntity
+	for _, value := range gjsonResult.Array() {
+		tags = append(tags, TagEntity{
+			Text:     value.Get("text").String(),
+			Color:    value.Get("color").String(),
+			TagColor: value.Get("tagColor").String(),
+		})
 	}
 	userInfo := UserInfo{
 		Username: userModel.Username,
 		Group:    groups,
-		Tags:     userModel.Tags,
+		Tags:     tags,
 	}
 	return c.JSON(fiber.Map{
 		"token": t,
