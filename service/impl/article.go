@@ -41,7 +41,7 @@ func GetArticleCountByCategory(category string) (int64, error) {
 func GetArticleList(target string, page int, pageSize int, pin bool) ([]model.Article, error) {
 	db := database.GetInstance()
 	var articles []model.Article
-	err := db.Where("target = ? AND pin = ?", target, pin).
+	err := db.Where("category = ? AND pin = ?", target, pin).
 		Order("created_at desc").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
