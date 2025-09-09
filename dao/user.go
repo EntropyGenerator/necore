@@ -156,5 +156,5 @@ func GetUserAvatar(username string) (string, error) {
 
 func UpdateUserAvatar(username string, avatar string) error {
 	db := database.GetInstance()
-	return db.Model(&model.UserAvatar{Username: username}).Updates(model.UserAvatar{Avatar: avatar}).Error
+	return db.Save(&model.UserAvatar{Username: username, Avatar: avatar}).Error
 }
