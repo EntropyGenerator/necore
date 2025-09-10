@@ -59,7 +59,7 @@ func UpdateArticle(c *fiber.Ctx) error {
 	}
 	type Payload struct {
 		Entity   PayloadEntity    `json:"entity"`
-		Contents []PayloadContent `json:"contents"`
+		Content  []PayloadContent `json:"content"`
 		Category string           `json:"category"`
 	}
 	payload := new(Payload)
@@ -67,7 +67,7 @@ func UpdateArticle(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err})
 	}
 
-	newContents, err := json.Marshal(payload.Contents)
+	newContent, err := json.Marshal(payload.Content)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err})
 	}
@@ -81,7 +81,7 @@ func UpdateArticle(c *fiber.Ctx) error {
 		EndDate:  payload.Entity.EndDate,
 		Image:    payload.Entity.Image,
 		Category: payload.Category,
-		Content:  string(newContents),
+		Content:  string(newContent),
 	}
 
 	if err := dao.UpdateArticle(newArticle); err != nil {
@@ -112,7 +112,7 @@ func GetArticleById(c *fiber.Ctx) error {
 	}
 	type Payload struct {
 		Entity   PayloadEntity    `json:"entity"`
-		Contents []PayloadContent `json:"contents"`
+		Content  []PayloadContent `json:"content"`
 		Category string           `json:"category"`
 	}
 	payloadEntity := PayloadEntity{
@@ -123,11 +123,11 @@ func GetArticleById(c *fiber.Ctx) error {
 		EndDate: article.EndDate,
 		Image:   article.Image,
 	}
-	var payloadContents []PayloadContent
-	json.Unmarshal([]byte(article.Content), &payloadContents)
+	var payloadContent []PayloadContent
+	json.Unmarshal([]byte(article.Content), &payloadContent)
 	payload := Payload{
 		Entity:   payloadEntity,
-		Contents: payloadContents,
+		Content:  payloadContent,
 		Category: article.Category,
 	}
 	return c.JSON(payload)
