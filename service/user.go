@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"necore/dao"
 
 	"github.com/gofiber/fiber/v2"
@@ -148,18 +149,30 @@ func UpdateUserInfo(c *fiber.Ctx) error {
 	if !dao.IsUserInGroup(token, "admin") {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
 	}
-
+	type PayloadTags struct {
+		Text     string `json:"text"`
+		Color    string `json:"color"`
+		TagColor string `json:"tagColor"`
+	}
 	type Payload struct {
-		Username string `json:"username"`
-		Group    string `json:"group"`
-		Tags     string `json:"Tags"`
+		Username string        `json:"username"`
+		Group    []string      `json:"group"`
+		Tags     []PayloadTags `json:"Tags"`
 	}
 	payload := new(Payload)
 	if err := c.BodyParser(payload); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
 	}
+	groups, err := json.Marshal(payload.Group)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+	}
+	tags, err := json.Marshal(payload.Tags)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+	}
 
-	if err := dao.UpdateUserInfo(payload.Username, payload.Group, payload.Tags); err != nil {
+	if err := dao.UpdateUserInfo(payload.Username, string(groups), string(tags)); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
 	}
 

@@ -42,6 +42,7 @@ func UpdateArticle(c *fiber.Ctx) error {
 	if !isAdmin && isNewsAdmin {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
 	}
+	author := dao.GetUsernameFromToken(token)
 
 	id := c.Params("id")
 	// Parse
@@ -82,6 +83,7 @@ func UpdateArticle(c *fiber.Ctx) error {
 		Image:    payload.Entity.Image,
 		Category: payload.Category,
 		Content:  string(newContent),
+		Author:   author,
 	}
 
 	if err := dao.UpdateArticle(newArticle); err != nil {
@@ -114,6 +116,7 @@ func GetArticleById(c *fiber.Ctx) error {
 		Entity   PayloadEntity    `json:"entity"`
 		Content  []PayloadContent `json:"content"`
 		Category string           `json:"category"`
+		Author   string           `json:"author"`
 	}
 	payloadEntity := PayloadEntity{
 		Pin:     article.Pin,
@@ -129,6 +132,7 @@ func GetArticleById(c *fiber.Ctx) error {
 		Entity:   payloadEntity,
 		Content:  payloadContent,
 		Category: article.Category,
+		Author:   article.Author,
 	}
 	return c.JSON(payload)
 }
