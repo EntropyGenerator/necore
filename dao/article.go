@@ -8,7 +8,7 @@ import (
 // Database
 
 func CreateArticle(id string) error {
-	db := database.GetInstance()
+	db := database.GetArticleDatabase()
 	article := model.Article{
 		Id: id,
 	}
@@ -16,12 +16,12 @@ func CreateArticle(id string) error {
 }
 
 func UpdateArticle(updatedArticle model.Article) error {
-	db := database.GetInstance()
+	db := database.GetArticleDatabase()
 	return db.Save(&updatedArticle).Error
 }
 
 func GetArticle(id string) (*model.Article, error) {
-	db := database.GetInstance()
+	db := database.GetArticleDatabase()
 	article := model.Article{}
 	if err := db.Where(&model.Article{Id: id}).First(&article).Error; err != nil {
 		return nil, err
@@ -30,7 +30,7 @@ func GetArticle(id string) (*model.Article, error) {
 }
 
 func GetArticleCountByCategory(category string) (int64, error) {
-	db := database.GetInstance()
+	db := database.GetArticleDatabase()
 	var count int64
 	if err := db.Model(&model.Article{}).Where("category = ?", category).Count(&count).Error; err != nil {
 		return 0, err
@@ -39,7 +39,7 @@ func GetArticleCountByCategory(category string) (int64, error) {
 }
 
 func GetArticleList(target string, page int, pageSize int, pin bool) ([]model.Article, error) {
-	db := database.GetInstance()
+	db := database.GetArticleDatabase()
 	var articles []model.Article
 	err := db.Where("category = ? AND pin = ?", target, pin).
 		Order("created_at desc").
@@ -53,6 +53,6 @@ func GetArticleList(target string, page int, pageSize int, pin bool) ([]model.Ar
 }
 
 func DeleteArticle(id string) error {
-	db := database.GetInstance()
+	db := database.GetArticleDatabase()
 	return db.Delete(&model.Article{Id: id}).Error
 }

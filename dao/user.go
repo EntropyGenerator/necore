@@ -92,7 +92,7 @@ func IsUserInGroup(t *jwt.Token, group string) bool {
 // Database
 
 func GetUserByUsername(u string) (*model.User, error) {
-	db := database.GetInstance()
+	db := database.GetUserDatabase()
 	var user model.User
 	if err := db.Where(&model.User{Username: u}).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -106,7 +106,7 @@ func GetUserByUsername(u string) (*model.User, error) {
 
 func AddUserByUsername(username string, password string) error {
 	hash, _ := hashPassword(password)
-	db := database.GetInstance()
+	db := database.GetUserDatabase()
 	user := model.User{
 		Username: username,
 		Password: hash,
@@ -115,15 +115,15 @@ func AddUserByUsername(username string, password string) error {
 }
 
 func GetAllUsers() ([]model.User, error) {
-	db := database.GetInstance()
+	db := database.GetUserDatabase()
 	var users []model.User
 	err := db.Find(&users).Error
 	return users, err
 }
 
 func DeleteUserByUsername(username string) error {
-	db := database.GetInstance()
-	return db.Where(&model.User{Username: username}).Delete(&model.User{}).Error
+	db := database.GetUserDatabase()
+	return db.Delete(&model.User{Username: username}).Error
 }
 
 func CheckUserPassword(input string, password string) bool {
@@ -131,20 +131,28 @@ func CheckUserPassword(input string, password string) bool {
 }
 
 func UpdateUserPassword(username string, password string) error {
-	hash, _ := hashPassword(password)
-	db := database.GetInstance()
-	return db.Model(&model.User{Username: username}).Update("Password", hash).Error
+	hash, err := hashPassword(password)
+	if err != nil {
+		return err
+	}
+
+	db := database.GetUserDatabase()
+	var user *model.User
+	db.Where(&model.User{Username: username}).First(&user)
+	return db.Model(&user).Update("Password", hash).Error
 }
 
 func UpdateUserInfo(username string, group string, tags string) error {
-	db := database.GetInstance()
-	return db.Model(&model.User{Username: username}).Updates(model.User{Group: group, Tags: tags}).Error
+	db := database.GetUserDatabase()
+	var user *model.User
+	db.Where(&model.User{Username: username}).First(&user)
+	return db.Model(&user).Updates(model.User{Group: group, Tags: tags}).Error
 }
 
 func GetUserAvatar(username string) (string, error) {
-	db := database.GetInstance()
-	var user model.UserAvatar
-	if err := db.Where(&model.UserAvatar{Username: username}).First(&user).Error; err != nil {
+	db := database.GetUserDatabase()
+	var user model.User
+	if err := db.Where(&model.User{Username: username}).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return "", nil
 		}
@@ -155,6 +163,8 @@ func GetUserAvatar(username string) (string, error) {
 }
 
 func UpdateUserAvatar(username string, avatar string) error {
-	db := database.GetInstance()
-	return db.Save(&model.UserAvatar{Username: username, Avatar: avatar}).Error
+	db := database.GetUserDatabase()
+	var user *model.User
+	db.Where(&model.User{Username: username}).First(&user)
+	return db.Model(&user).Updates(model.User{Avatar: avatar}).Error
 }

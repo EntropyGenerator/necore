@@ -2,6 +2,8 @@ package model
 
 import "gorm.io/gorm"
 
+//"information" | "magazine" | "notice" | "activity" | "document"
+
 type Article struct {
 	gorm.Model
 

@@ -9,6 +9,7 @@
 # Database
 
 database.sqlite3
+data/*.sqlite3
 
 # Contents
 
