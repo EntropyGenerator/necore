@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
 	"necore/config"
@@ -9,7 +10,6 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/tidwall/gjson"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -55,13 +55,21 @@ func GetUserGroupsFromToken(t *jwt.Token) []string {
 		return []string{}
 	}
 
-	gjsonResult := gjson.Get(claims.(string), "@this")
-	var result []string
-	for _, value := range gjsonResult.Array() {
-		result = append(result, value.String())
+	var groups []string
+	err := json.Unmarshal([]byte(claims.(string)), &groups)
+	if err != nil {
+		// log.Println(err)
+		return []string{}
 	}
+	return groups
 
-	return result
+	// gjsonResult := gjson.Get(claims.(string), "@this")
+	// var result []string
+	// for _, value := range gjsonResult.Array() {
+	// 	result = append(result, value.String())
+	// }
+
+	// return result
 }
 
 func GetUserTagsFromToken(t *jwt.Token) []string {
@@ -70,13 +78,21 @@ func GetUserTagsFromToken(t *jwt.Token) []string {
 		return []string{}
 	}
 
-	gjsonResult := gjson.Get(claims.(string), "@this")
-	var result []string
-	for _, value := range gjsonResult.Array() {
-		result = append(result, value.String())
+	var tags []string
+	err := json.Unmarshal([]byte(claims.(string)), &tags)
+	if err != nil {
+		// log.Println(err)
+		return []string{}
 	}
+	return tags
 
-	return result
+	// gjsonResult := gjson.Get(claims.(string), "@this")
+	// var result []string
+	// for _, value := range gjsonResult.Array() {
+	// 	result = append(result, value.String())
+	// }
+
+	// return result
 }
 
 func IsUserInGroup(t *jwt.Token, group string) bool {

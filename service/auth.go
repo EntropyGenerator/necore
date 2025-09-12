@@ -1,11 +1,11 @@
 package service
 
 import (
+	"encoding/json"
 	"necore/dao"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/tidwall/gjson"
 )
 
 // Handlers
@@ -52,20 +52,33 @@ func Login(c *fiber.Ctx) error {
 		Group    []string    `json:"group"`
 		Tags     []TagEntity `json:"tags"`
 	}
-	gjsonResult := gjson.Get(userModel.Group, "@this")
+
 	var groups []string
-	for _, value := range gjsonResult.Array() {
-		groups = append(groups, value.String())
+	err = json.Unmarshal([]byte(userModel.Group), &groups)
+	if err != nil {
+		// log.Println(err)
+		groups = []string{}
 	}
-	gjsonResult = gjson.Get(userModel.Tags, "@this")
 	var tags []TagEntity
-	for _, value := range gjsonResult.Array() {
-		tags = append(tags, TagEntity{
-			Text:     value.Get("text").String(),
-			Color:    value.Get("color").String(),
-			TagColor: value.Get("tagColor").String(),
-		})
+	err = json.Unmarshal([]byte(userModel.Tags), &tags)
+	if err != nil {
+		// log.Println(err)
+		tags = []TagEntity{}
 	}
+	// gjsonResult := gjson.Get(userModel.Group, "@this")
+	// var groups []string
+	// for _, value := range gjsonResult.Array() {
+	// 	groups = append(groups, value.String())
+	// }
+	// gjsonResult = gjson.Get(userModel.Tags, "@this")
+	// var tags []TagEntity
+	// for _, value := range gjsonResult.Array() {
+	// 	tags = append(tags, TagEntity{
+	// 		Text:     value.Get("text").String(),
+	// 		Color:    value.Get("color").String(),
+	// 		TagColor: value.Get("tagColor").String(),
+	// 	})
+	// }
 	userInfo := UserInfo{
 		Username: userModel.Username,
 		Group:    groups,

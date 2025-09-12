@@ -6,7 +6,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/tidwall/gjson"
 )
 
 func GetUserInfo(c *fiber.Ctx) error {
@@ -35,20 +34,32 @@ func GetUserInfo(c *fiber.Ctx) error {
 		Group    []string    `json:"group"`
 		Tags     []TagEntity `json:"tags"`
 	}
-	gjsonResult := gjson.Get(userModel.Group, "@this")
 	var groups []string
-	for _, value := range gjsonResult.Array() {
-		groups = append(groups, value.String())
+	err = json.Unmarshal([]byte(userModel.Group), &groups)
+	if err != nil {
+		// log.Println(err, " User info groups")
+		groups = []string{}
 	}
-	gjsonResult = gjson.Get(userModel.Tags, "@this")
 	var tags []TagEntity
-	for _, value := range gjsonResult.Array() {
-		tags = append(tags, TagEntity{
-			Text:     value.Get("text").String(),
-			Color:    value.Get("color").String(),
-			TagColor: value.Get("tagColor").String(),
-		})
+	err = json.Unmarshal([]byte(userModel.Tags), &tags)
+	if err != nil {
+		// log.Println(err, " User info tags")
+		tags = []TagEntity{}
 	}
+	// gjsonResult := gjson.Get(userModel.Group, "@this")
+	// var groups []string
+	// for _, value := range gjsonResult.Array() {
+	// 	groups = append(groups, value.String())
+	// }
+	// gjsonResult = gjson.Get(userModel.Tags, "@this")
+	// var tags []TagEntity
+	// for _, value := range gjsonResult.Array() {
+	// 	tags = append(tags, TagEntity{
+	// 		Text:     value.Get("text").String(),
+	// 		Color:    value.Get("color").String(),
+	// 		TagColor: value.Get("tagColor").String(),
+	// 	})
+	// }
 	return c.JSON(fiber.Map{
 		"user": UserInfo{
 			Username: userModel.Username,
@@ -75,20 +86,32 @@ func GetUserList(c *fiber.Ctx) error {
 	userinfos := make([]UserInfo, len(users))
 
 	for i, user := range users {
-		gjsonResult := gjson.Get(user.Group, "@this")
 		var groups []string
-		for _, value := range gjsonResult.Array() {
-			groups = append(groups, value.String())
+		err = json.Unmarshal([]byte(user.Group), &groups)
+		if err != nil {
+			// log.Println(err, " User info groups")
+			groups = []string{}
 		}
-		gjsonResult = gjson.Get(user.Tags, "@this")
 		var tags []TagEntity
-		for _, value := range gjsonResult.Array() {
-			tags = append(tags, TagEntity{
-				Text:     value.Get("text").String(),
-				Color:    value.Get("color").String(),
-				TagColor: value.Get("tagColor").String(),
-			})
+		err = json.Unmarshal([]byte(user.Tags), &tags)
+		if err != nil {
+			// log.Println(err, " User info Tags")
+			tags = []TagEntity{}
 		}
+		// gjsonResult := gjson.Get(user.Group, "@this")
+		// var groups []string
+		// for _, value := range gjsonResult.Array() {
+		// 	groups = append(groups, value.String())
+		// }
+		// gjsonResult = gjson.Get(user.Tags, "@this")
+		// var tags []TagEntity
+		// for _, value := range gjsonResult.Array() {
+		// 	tags = append(tags, TagEntity{
+		// 		Text:     value.Get("text").String(),
+		// 		Color:    value.Get("color").String(),
+		// 		TagColor: value.Get("tagColor").String(),
+		// 	})
+		// }
 		userinfos[i] = UserInfo{
 			Username: user.Username,
 			Group:    groups,

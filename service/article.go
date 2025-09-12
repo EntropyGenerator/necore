@@ -12,12 +12,19 @@ import (
 	"github.com/google/uuid"
 )
 
-func CreateArticle(c *fiber.Ctx) error {
+func checkPermission(c *fiber.Ctx) bool {
 	// Check if user is admin or news_admin
 	token := c.Locals("user").(*jwt.Token)
 	isAdmin := dao.IsUserInGroup(token, "admin")
 	isNewsAdmin := dao.IsUserInGroup(token, "news_admin")
-	if !isAdmin && isNewsAdmin {
+	if isAdmin || isNewsAdmin {
+		return false
+	}
+	return true
+}
+
+func CreateArticle(c *fiber.Ctx) error {
+	if checkPermission(c) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
 	}
 
@@ -35,13 +42,10 @@ func CreateArticle(c *fiber.Ctx) error {
 }
 
 func UpdateArticle(c *fiber.Ctx) error {
-	// Check if user is admin or news_admin
-	token := c.Locals("user").(*jwt.Token)
-	isAdmin := dao.IsUserInGroup(token, "admin")
-	isNewsAdmin := dao.IsUserInGroup(token, "news_admin")
-	if !isAdmin && isNewsAdmin {
+	if checkPermission(c) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
 	}
+	token := c.Locals("user").(*jwt.Token)
 	author := dao.GetUsernameFromToken(token)
 
 	id := c.Params("id")
@@ -187,11 +191,7 @@ func GetArticleList(c *fiber.Ctx) error {
 }
 
 func UploadArticleFile(c *fiber.Ctx) error {
-	// Check if user is admin or news_admin
-	token := c.Locals("user").(*jwt.Token)
-	isAdmin := dao.IsUserInGroup(token, "admin")
-	isNewsAdmin := dao.IsUserInGroup(token, "news_admin")
-	if !isAdmin && isNewsAdmin {
+	if checkPermission(c) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
 	}
 
@@ -210,11 +210,7 @@ func UploadArticleFile(c *fiber.Ctx) error {
 }
 
 func DeleteArticleFile(c *fiber.Ctx) error {
-	// Check if user is admin or news_admin
-	token := c.Locals("user").(*jwt.Token)
-	isAdmin := dao.IsUserInGroup(token, "admin")
-	isNewsAdmin := dao.IsUserInGroup(token, "news_admin")
-	if !isAdmin && isNewsAdmin {
+	if checkPermission(c) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
 	}
 
@@ -233,11 +229,7 @@ func DeleteArticleFile(c *fiber.Ctx) error {
 }
 
 func DeleteArticle(c *fiber.Ctx) error {
-	// Check if user is admin or news_admin
-	token := c.Locals("user").(*jwt.Token)
-	isAdmin := dao.IsUserInGroup(token, "admin")
-	isNewsAdmin := dao.IsUserInGroup(token, "news_admin")
-	if !isAdmin && isNewsAdmin {
+	if checkPermission(c) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
 	}
 
