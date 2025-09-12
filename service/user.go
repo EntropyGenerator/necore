@@ -192,7 +192,7 @@ func GetUserAvatar(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": "Internal server error"})
 	}
 	return c.JSON(fiber.Map{
-		avatar: avatar,
+		"avatar": avatar,
 	})
 }
 
