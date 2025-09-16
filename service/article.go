@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func checkPermission(c *fiber.Ctx) bool {
+func checkNewsPermission(c *fiber.Ctx) bool {
 	// Check if user is admin or news_admin
 	token := c.Locals("user").(*jwt.Token)
 	isAdmin := dao.IsUserInGroup(token, "admin")
@@ -24,7 +24,7 @@ func checkPermission(c *fiber.Ctx) bool {
 }
 
 func CreateArticle(c *fiber.Ctx) error {
-	if checkPermission(c) {
+	if checkNewsPermission(c) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
 	}
 
@@ -42,7 +42,7 @@ func CreateArticle(c *fiber.Ctx) error {
 }
 
 func UpdateArticle(c *fiber.Ctx) error {
-	if checkPermission(c) {
+	if checkNewsPermission(c) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
 	}
 	token := c.Locals("user").(*jwt.Token)
@@ -191,7 +191,7 @@ func GetArticleList(c *fiber.Ctx) error {
 }
 
 func UploadArticleFile(c *fiber.Ctx) error {
-	if checkPermission(c) {
+	if checkNewsPermission(c) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
 	}
 
@@ -210,7 +210,7 @@ func UploadArticleFile(c *fiber.Ctx) error {
 }
 
 func DeleteArticleFile(c *fiber.Ctx) error {
-	if checkPermission(c) {
+	if checkNewsPermission(c) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
 	}
 
@@ -229,7 +229,7 @@ func DeleteArticleFile(c *fiber.Ctx) error {
 }
 
 func DeleteArticle(c *fiber.Ctx) error {
-	if checkPermission(c) {
+	if checkNewsPermission(c) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
 	}
 

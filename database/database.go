@@ -13,19 +13,28 @@ var userDatabase *gorm.DB
 // "information" | "magazine" | "notice" | "activity" | "document"
 var articleDatabase *gorm.DB
 
+var serverDatabase *gorm.DB
+
 func ConnectSqlite() {
 	var err error
 	userDatabase, err = gorm.Open(sqlite.Open("data/user.sqlite3"), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect user database")
 	}
+	userDatabase.AutoMigrate(&model.User{})
+
 	articleDatabase, err = gorm.Open(sqlite.Open("data/article.sqlite3"), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect information database")
 	}
-	// Migrate the schema
-	userDatabase.AutoMigrate(&model.User{})
 	articleDatabase.AutoMigrate(&model.Article{})
+
+	serverDatabase, err = gorm.Open(sqlite.Open("data/server.sqlite3"), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect server database")
+	}
+	serverDatabase.AutoMigrate(&model.Server{})
+
 }
 
 func GetUserDatabase() *gorm.DB {
@@ -34,4 +43,8 @@ func GetUserDatabase() *gorm.DB {
 
 func GetArticleDatabase() *gorm.DB {
 	return articleDatabase
+}
+
+func GetServerDatabase() *gorm.DB {
+	return serverDatabase
 }

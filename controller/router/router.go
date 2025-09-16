@@ -55,4 +55,10 @@ func SetupRoutes() {
 	articleGroup.Delete("/:id", middleware.AuthNeeded(), service.DeleteArticle)
 
 	(*router).Static("/contents", "./contents")
+
+	serverGroup := (*router).Group("/server")
+	serverGroup.Get("/", service.GetServerList)
+	serverGroup.Post("/", middleware.AuthNeeded(), service.AddServer)
+	serverGroup.Delete("/:id", middleware.AuthNeeded(), service.DeleteServer)
+	serverGroup.Patch("/", middleware.AuthNeeded(), service.AddServer)
 }

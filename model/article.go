@@ -7,7 +7,7 @@ import "gorm.io/gorm"
 type Article struct {
 	gorm.Model
 
-	Id       string `json:"id"`
+	Id       string `gorm:"uniqueIndex;not null" json:"id"`
 	Pin      bool   `json:"pin"`
 	Title    string `json:"title"`
 	Brief    string `json:"brief"`
