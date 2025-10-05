@@ -15,6 +15,8 @@ var articleDatabase *gorm.DB
 
 var serverDatabase *gorm.DB
 
+var documentDatabase *gorm.DB
+
 func ConnectSqlite() {
 	var err error
 	userDatabase, err = gorm.Open(sqlite.Open("data/user.sqlite3"), &gorm.Config{})
@@ -35,6 +37,15 @@ func ConnectSqlite() {
 	}
 	serverDatabase.AutoMigrate(&model.Server{})
 
+	documentDatabase, err = gorm.Open(sqlite.Open("data/document.sqlite3"), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect document database")
+	}
+	documentDatabase.AutoMigrate(
+		&model.DocumentCategory{},
+		&model.DocumentTab{},
+		&model.Document{})
+
 }
 
 func GetUserDatabase() *gorm.DB {
@@ -47,4 +58,8 @@ func GetArticleDatabase() *gorm.DB {
 
 func GetServerDatabase() *gorm.DB {
 	return serverDatabase
+}
+
+func GetDocumentDatabase() *gorm.DB {
+	return documentDatabase
 }

@@ -15,7 +15,7 @@ pkgs.mkShell {
     delve
     gotools
     sqlite
-    postman
+    # postman
   ];
   shellHook = ''
     # 设置 GOPATH 和 GOBIN

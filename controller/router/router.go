@@ -54,11 +54,28 @@ func SetupRoutes() {
 	articleGroup.Post("/create", middleware.AuthNeeded(), service.CreateArticle)
 	articleGroup.Delete("/:id", middleware.AuthNeeded(), service.DeleteArticle)
 
-	(*router).Static("/contents", "./contents")
-
 	serverGroup := (*router).Group("/server")
 	serverGroup.Get("/", service.GetServerList)
 	serverGroup.Post("/", middleware.AuthNeeded(), service.AddServer)
 	serverGroup.Delete("/:id", middleware.AuthNeeded(), service.DeleteServer)
 	serverGroup.Patch("/", middleware.AuthNeeded(), service.AddServer)
+
+	documentGroup := (*router).Group("/document")
+	documentGroup.Post("/category", middleware.AuthNeeded(), service.CreateDocumentCategory)
+	documentGroup.Patch("/category", middleware.AuthNeeded(), service.DeleteDocumentCategory)
+	documentGroup.Get("/categories", middleware.AuthNeeded(), service.GetDocumentCategories)
+	documentGroup.Post("/tab", middleware.AuthNeeded(), service.CreateDocumentTab)
+	documentGroup.Patch("/tab", middleware.AuthNeeded(), service.DeleteDocumentTab)
+	documentGroup.Post("/tabs", middleware.AuthNeeded(), service.GetDocumentTabs)
+	documentGroup.Post("/list", middleware.AuthNeeded(), service.GetDocumentList)
+	documentGroup.Get("/:id", middleware.AuthNeeded(), service.GetDocumentById)
+	documentGroup.Post("/id", middleware.AuthNeeded(), service.CreateDocument)
+	documentGroup.Post("/upload/:id", middleware.AuthNeeded(), service.UploadDocumentFile)
+	documentGroup.Post("/delete/:id", middleware.AuthNeeded(), service.DeleteDocumentFile)
+	documentGroup.Patch("/:id", middleware.AuthNeeded(), service.UpdateDocument)
+	documentGroup.Delete("/:id", middleware.AuthNeeded(), service.DeleteDocument)
+	documentGroup.Post("/latest", middleware.AuthNeeded(), service.GetDocumentByNum)
+	documentGroup.Post("/search", middleware.AuthNeeded(), service.SearchDocument)
+
+	(*router).Static("/contents", "./contents")
 }
