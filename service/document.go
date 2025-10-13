@@ -186,9 +186,61 @@ func GetDocumentTabs(c *fiber.Ctx) error {
 }
 
 func GetDocumentById(c *fiber.Ctx) error {
-	isAdmin := checkDocumentPermission(c)
+	doc, err := dao.GetDocument(c.Params("id"), false)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
 
-	doc, err := dao.GetDocument(c.Params("id"), isAdmin)
+	type payload struct {
+		Category string `json:"category"`
+		Tab      string `json:"tab"`
+	}
+	payloads := new(payload)
+	if err := c.BodyParser(payloads); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request",
+		})
+	}
+
+	type PayloadContent struct {
+		Type    string `json:"type"`
+		Content string `json:"content"`
+	}
+	type Payload struct {
+		Id           string           `json:"id"`
+		Title        string           `json:"title"`
+		Description  string           `json:"description"`
+		Category     string           `json:"category"`
+		Tab          string           `json:"tab"`
+		Contributors []string         `json:"contributors"`
+		Priority     int              `json:"priority"`
+		Content      []PayloadContent `json:"content"`
+		CreateTime   string           `json:"createTime"`
+		UpdateTime   string           `json:"updateTime"`
+	}
+	var payloadContent []PayloadContent
+	json.Unmarshal([]byte(doc.Content), &payloadContent)
+	var contributors []string
+	json.Unmarshal([]byte(doc.Contributors), &contributors)
+	p := Payload{
+		Id:           doc.Id,
+		Title:        doc.Title,
+		Description:  doc.Description,
+		Category:     doc.Category,
+		Tab:          doc.Tab,
+		Contributors: contributors,
+		Priority:     doc.Priority,
+		Content:      payloadContent,
+		CreateTime:   doc.CreateTime,
+		UpdateTime:   doc.UpdateTime,
+	}
+	return c.Status(fiber.StatusOK).JSON(p)
+}
+
+func GetDocumentPrivateById(c *fiber.Ctx) error {
+	doc, err := dao.GetDocument(c.Params("id"), true)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -242,8 +294,6 @@ func GetDocumentById(c *fiber.Ctx) error {
 }
 
 func GetDocumentList(c *fiber.Ctx) error {
-	isAdmin := checkDocumentPermission(c)
-
 	type request struct {
 		Category string `json:"category"`
 		Tab      string `json:"tab"`
@@ -255,7 +305,36 @@ func GetDocumentList(c *fiber.Ctx) error {
 		})
 	}
 
-	documents, err := dao.GetDocumentListByClass(requests.Category, requests.Tab, isAdmin)
+	documents, err := dao.GetDocumentListByClass(requests.Category, requests.Tab, false)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	patchedDocBriefs := make([]docBrief, len(documents))
+	for i, doc := range documents {
+		patchedDocBriefs[i] = docBrief{
+			Id:          doc.Id,
+			Title:       doc.Title,
+			Description: doc.Description,
+		}
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"documents": patchedDocBriefs})
+}
+
+func GetDocumentPrivateList(c *fiber.Ctx) error {
+	type request struct {
+		Category string `json:"category"`
+		Tab      string `json:"tab"`
+	}
+	requests := new(request)
+	if err := c.BodyParser(requests); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request",
+		})
+	}
+
+	documents, err := dao.GetDocumentListByClass(requests.Category, requests.Tab, true)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -458,7 +537,6 @@ func GetDocumentByNum(c *fiber.Ctx) error {
 }
 
 func SearchDocument(c *fiber.Ctx) error {
-	isAdmin := checkDocumentPermission(c)
 	type request struct {
 		Keyword  string `json:"keyword"`
 		PageSize int    `json:"pageSize"`
@@ -470,7 +548,38 @@ func SearchDocument(c *fiber.Ctx) error {
 			"error": "Invalid request",
 		})
 	}
-	documents, err := dao.SearchDocument(requests.Keyword, (requests.Page-1)*requests.PageSize, requests.PageSize, isAdmin)
+	documents, err := dao.SearchDocument(requests.Keyword, (requests.Page-1)*requests.PageSize, requests.PageSize, false)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	docBriefs := make([]docBrief, len(documents))
+	for i, doc := range documents {
+		docBriefs[i] = docBrief{
+			Id:          doc.Id,
+			Title:       doc.Title,
+			Description: doc.Description,
+		}
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"documents": docBriefs,
+	})
+}
+
+func SearchDocumentPrivate(c *fiber.Ctx) error {
+	type request struct {
+		Keyword  string `json:"keyword"`
+		PageSize int    `json:"pageSize"`
+		Page     int    `json:"page"`
+	}
+	requests := new(request)
+	if err := c.BodyParser(requests); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request",
+		})
+	}
+	documents, err := dao.SearchDocument(requests.Keyword, (requests.Page-1)*requests.PageSize, requests.PageSize, true)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
