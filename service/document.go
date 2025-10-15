@@ -193,17 +193,6 @@ func GetDocumentById(c *fiber.Ctx) error {
 		})
 	}
 
-	type payload struct {
-		Category string `json:"category"`
-		Tab      string `json:"tab"`
-	}
-	payloads := new(payload)
-	if err := c.BodyParser(payloads); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request",
-		})
-	}
-
 	type PayloadContent struct {
 		Type    string `json:"type"`
 		Content string `json:"content"`
@@ -244,17 +233,6 @@ func GetDocumentPrivateById(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
-		})
-	}
-
-	type payload struct {
-		Category string `json:"category"`
-		Tab      string `json:"tab"`
-	}
-	payloads := new(payload)
-	if err := c.BodyParser(payloads); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request",
 		})
 	}
 

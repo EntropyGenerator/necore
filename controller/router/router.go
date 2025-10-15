@@ -81,6 +81,4 @@ func SetupRoutes() {
 	documentGroup.Post("/private/search", middleware.AuthNeeded(), service.SearchDocument)
 
 	(*router).Static("/contents", "./contents")
-	// Temp solution: document contents should be seperated
-	(*router).Static("/documents", "./contents")
 }
