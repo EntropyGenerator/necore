@@ -145,7 +145,7 @@ func UpdateUserPassword(c *fiber.Ctx) error {
 	token := c.Locals("user").(*jwt.Token)
 	isAdmin := dao.IsUserInGroup(token, "admin")
 	tokenUsername := dao.GetUsernameFromToken(token)
-	if isAdmin || tokenUsername == userId {
+	if !(isAdmin || tokenUsername == userId) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
 	}
 
