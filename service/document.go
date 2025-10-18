@@ -59,6 +59,12 @@ func CreateDocumentCategory(c *fiber.Ctx) error {
 		})
 	}
 
+	if payload.Category == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Category name cannot be empty",
+		})
+	}
+
 	if err := dao.CreateDocumentCategory(payload.Category); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -121,6 +127,12 @@ func CreateDocumentTab(c *fiber.Ctx) error {
 	}
 	payloads := new(payload)
 	if err := c.BodyParser(payloads); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request",
+		})
+	}
+
+	if payloads.Category == "" || payloads.Tab == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request",
 		})
