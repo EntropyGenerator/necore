@@ -450,7 +450,16 @@ func UpdateDocument(c *fiber.Ctx) error {
 			"error": err.Error(),
 		})
 	}
-	newContributors, err := json.Marshal(contributors)
+
+	deduplicatedContributors := make(map[string]bool)
+	for _, contributor := range contributors {
+		deduplicatedContributors[contributor] = true
+	}
+	contributorsList := make([]string, 0, len(deduplicatedContributors))
+	for contributor := range deduplicatedContributors {
+		contributorsList = append(contributorsList, contributor)
+	}
+	newContributors, err := json.Marshal(contributorsList)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
