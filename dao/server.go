@@ -24,6 +24,7 @@ func UpdateServer(server model.Server) error {
 	return db.Model(&s).Updates(server).Error
 }
 
+// TODO: fix
 func DeleteServer(name string) error {
 	db := database.GetServerDatabase()
 	return db.Delete(&model.Server{Name: name}).Error

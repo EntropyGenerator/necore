@@ -2,31 +2,29 @@ package model
 
 import "gorm.io/gorm"
 
-type DocumentCategory struct {
+// type DocumentCategory struct {
+// 	gorm.Model
+
+// 	Category string `gorm:"uniqueIndex;not null" json:"category"`
+// }
+
+// type DocumentTab struct {
+// 	gorm.Model
+
+// 	Tab      string `gorm:"uniqueIndex;not null" json:"tab"`
+// 	Category string `gorm:"not null" json:"category"`
+// }
+
+type DocumentNode struct {
 	gorm.Model
 
-	Category string `gorm:"uniqueIndex;not null" json:"category"`
-}
+	Id       string `gorm:"uniqueIndex;not null" json:"id"`
+	ParentId string `gorm:"not null" json:"parentId"`
+	IsFolder bool   `json:"isFolder"`
+	Private  bool   `json:"private"`
+	Name     string `gorm:"not null" json:"name"`
 
-type DocumentTab struct {
-	gorm.Model
-
-	Tab      string `gorm:"uniqueIndex;not null" json:"tab"`
-	Category string `gorm:"not null" json:"category"`
-}
-
-type Document struct {
-	gorm.Model
-
-	Id           string `gorm:"uniqueIndex;not null" json:"id"`
-	Title        string `json:"title"`
-	Description  string `json:"description"`
 	Content      string `json:"content"`
-	Tab          string `json:"tab"`
-	Category     string `json:"category"`
 	Contributors string `json:"contributors"`
-	CreateTime   string `json:"createTime"`
 	UpdateTime   string `json:"updateTime"`
-	Private      bool   `json:"private"`
-	Priority     int    `json:"priority"`
 }

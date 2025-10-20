@@ -41,10 +41,7 @@ func ConnectSqlite() {
 	if err != nil {
 		panic("failed to connect document database")
 	}
-	documentDatabase.AutoMigrate(
-		&model.DocumentCategory{},
-		&model.DocumentTab{},
-		&model.Document{})
+	documentDatabase.AutoMigrate(&model.DocumentNode{})
 
 }
 
