@@ -1,8 +1,10 @@
 package dao
 
 import (
+	"fmt"
 	"necore/database"
 	"necore/model"
+	"os"
 )
 
 // Database
@@ -65,5 +67,7 @@ func GetArticleList(target string, page int, pageSize int, pin bool) ([]model.Ar
 
 func DeleteArticle(id string) error {
 	db := database.GetArticleDatabase()
+	// Delete File
+	os.RemoveAll(fmt.Sprintf("./contents/%s", id))
 	return db.Delete(&model.Article{Id: id}).Error
 }

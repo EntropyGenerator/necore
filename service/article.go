@@ -237,8 +237,5 @@ func DeleteArticle(c *fiber.Ctx) error {
 	if err := dao.DeleteArticle(id); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err})
 	}
-	if err := os.RemoveAll(fmt.Sprintf("./contents/%s", id)); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err})
-	}
 	return c.SendStatus(fiber.StatusOK)
 }

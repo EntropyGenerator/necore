@@ -2,8 +2,11 @@ package dao
 
 import (
 	"encoding/json"
+	"fmt"
 	"necore/database"
 	"necore/model"
+	"os"
+	"time"
 )
 
 // func CreateDocumentCategory(categoryName string) error {
@@ -40,14 +43,15 @@ func DeleteDocumentNode(id string) error {
 			db.Where("id = ?", child.Id).Delete(&model.DocumentNode{})
 		}
 	} else {
-		// TODO: delete file
+		// Delete Files
+		os.RemoveAll(fmt.Sprintf("./contents/%s", id))
 	}
 	return db.Where("id = ?", id).Delete(&model.DocumentNode{}).Error
 }
 
 func UpdateDocumentNodeName(id string, name string) error {
 	db := database.GetDocumentDatabase()
-	return db.Model(&model.DocumentNode{}).Where("id = ?", id).Update("name", name).Error
+	return db.Model(&model.DocumentNode{}).Where("id = ?", id).Updates(model.DocumentNode{Name: name, UpdateTime: time.Now().String()}).Error
 }
 
 func UpdateDocumentNodeContent(id string, content string, private bool, username string) error {
@@ -93,4 +97,21 @@ func GetDocumentNodeChildren(id string, private bool) ([]model.DocumentNode, err
 		return nil, err
 	}
 	return nodes, nil
+}
+
+func GetDocumentContent(id string, private bool) (model.DocumentNode, error) {
+	db := database.GetDocumentDatabase()
+	var node model.DocumentNode
+	var err error
+	if private {
+		// all
+		err = db.Where("id = ?", id).First(&node).Error
+	} else {
+		// public only
+		err = db.Where("id = ? and private = ?", id, false).First(&node).Error
+	}
+	if err != nil {
+		return model.DocumentNode{}, err
+	}
+	return node, nil
 }

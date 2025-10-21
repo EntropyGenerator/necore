@@ -2,8 +2,10 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"necore/dao"
 	"necore/model"
+	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -168,7 +170,14 @@ type docNode struct {
 	Id       string `json:"id"`
 	IsFolder bool   `json:"isFolder"`
 	Private  bool   `json:"private"`
+	Name     string `json:"name"`
+}
 
+type docNodeWithContent struct {
+	ParentId     string       `json:"parentId"`
+	Id           string       `json:"id"`
+	IsFolder     bool         `json:"isFolder"`
+	Private      bool         `json:"private"`
 	Name         string       `json:"name"`
 	Contributors []string     `json:"contributors"`
 	Content      []docContent `json:"content"`
@@ -176,6 +185,16 @@ type docNode struct {
 }
 
 func marshalDocNode(doc *model.DocumentNode) docNode {
+	return docNode{
+		ParentId: doc.ParentId,
+		Id:       doc.Id,
+		IsFolder: doc.IsFolder,
+		Private:  doc.Private,
+		Name:     doc.Name,
+	}
+}
+
+func marshalDocNodeWithContent(doc *model.DocumentNode) docNodeWithContent {
 	var contents []docContent
 	if err := json.Unmarshal([]byte(doc.Content), &contents); err != nil {
 		contents = make([]docContent, 0)
@@ -184,12 +203,11 @@ func marshalDocNode(doc *model.DocumentNode) docNode {
 	if err := json.Unmarshal([]byte(doc.Contributors), &contributors); err != nil {
 		contributors = make([]string, 0)
 	}
-	return docNode{
-		ParentId: doc.ParentId,
-		Id:       doc.Id,
-		IsFolder: doc.IsFolder,
-		Private:  doc.Private,
-
+	return docNodeWithContent{
+		ParentId:     doc.ParentId,
+		Id:           doc.Id,
+		IsFolder:     doc.IsFolder,
+		Private:      doc.Private,
 		Name:         doc.Name,
 		Contributors: contributors,
 		Content:      contents,
@@ -235,4 +253,73 @@ func GetDocumentNodeChildren(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"children": marshalledNodeList,
 	})
+}
+
+func GetDocumentNodeContentPrivate(c *fiber.Ctx) error {
+	if !checkDocumentPermission(c) {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "You don't have permission to update document node name",
+		})
+	}
+	id := c.Params("id")
+	node, err := dao.GetDocumentContent(id, true)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.JSON(marshalDocNodeWithContent(&node))
+}
+
+func GetDocumentNodeContent(c *fiber.Ctx) error {
+	id := c.Params("id")
+	node, err := dao.GetDocumentContent(id, false)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.JSON(marshalDocNodeWithContent(&node))
+}
+
+func UploadDocumentFile(c *fiber.Ctx) error {
+	if !checkDocumentPermission(c) {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "You don't have permission to update document node name",
+		})
+	}
+	id := c.Params("id")
+	file, err := c.FormFile("file")
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	if err := os.MkdirAll(fmt.Sprintf("./contents/%s", id), os.ModePerm); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err})
+	}
+	if err := c.SaveFile(file, fmt.Sprintf("./contents/%s/%s", id, file.Filename)); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err})
+	}
+	return c.JSON(fiber.Map{"url": fmt.Sprintf("/contents/%s/%s", id, file.Filename)})
+}
+
+func DeleteDocumentFile(c *fiber.Ctx) error {
+	if !checkDocumentPermission(c) {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "You don't have permission to update document node name",
+		})
+	}
+	// id := c.Params("id") // It is included in the url
+	type Payload struct {
+		Url string `json:"url"`
+	}
+	payload := new(Payload)
+	if err := c.BodyParser(payload); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err})
+	}
+	if err := os.Remove(fmt.Sprintf("./%s", payload.Url)); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err})
+	}
+	return c.SendStatus(fiber.StatusOK)
 }
