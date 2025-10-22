@@ -94,7 +94,8 @@ func GetDocumentNodeChildren(id string, private bool) ([]model.DocumentNode, err
 		err = db.Where("parentId = ? and private = ?", id, false).Find(&nodes).Error
 	}
 	if err != nil {
-		return nil, err
+		nodes = []model.DocumentNode{}
+		return nodes, err
 	}
 	return nodes, nil
 }

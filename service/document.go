@@ -224,14 +224,16 @@ func GetDocumentNodeChildrenPrivate(c *fiber.Ctx) error {
 	id := c.Params("parentId")
 
 	nodeList, err := dao.GetDocumentNodeChildren(id, true)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
-	}
+
 	marshalledNodeList := make([]docNode, len(nodeList))
 	for i, node := range nodeList {
 		marshalledNodeList[i] = marshalDocNode(&node)
+	}
+	if err != nil {
+		return c.JSON(fiber.Map{
+			"error":    err.Error(),
+			"children": marshalledNodeList,
+		})
 	}
 	return c.JSON(fiber.Map{
 		"children": marshalledNodeList,
@@ -241,14 +243,17 @@ func GetDocumentNodeChildrenPrivate(c *fiber.Ctx) error {
 func GetDocumentNodeChildren(c *fiber.Ctx) error {
 	id := c.Params("parentId")
 	nodeList, err := dao.GetDocumentNodeChildren(id, false)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
-	}
+
 	marshalledNodeList := make([]docNode, len(nodeList))
 	for i, node := range nodeList {
 		marshalledNodeList[i] = marshalDocNode(&node)
+	}
+
+	if err != nil {
+		return c.JSON(fiber.Map{
+			"error":    err.Error(),
+			"children": marshalledNodeList,
+		})
 	}
 	return c.JSON(fiber.Map{
 		"children": marshalledNodeList,
