@@ -34,7 +34,7 @@ func GetArticle(id string) (*model.Article, error) {
 func GetArticleCountByCategory(category string) (int64, error) {
 	db := database.GetArticleDatabase()
 	var count int64
-	if err := db.Model(&model.Article{}).Where("category = ?", category).Count(&count).Error; err != nil {
+	if err := db.Model(&model.Article{}).Where(&model.Article{Category: category}).Count(&count).Error; err != nil {
 		return 0, err
 	}
 	return count, nil
@@ -45,14 +45,14 @@ func GetArticleList(target string, page int, pageSize int, pin bool) ([]model.Ar
 	var articles []model.Article
 	var err error
 	if pin {
-		err = db.Where("category = ? AND pin = ?", target, pin).
+		err = db.Where(&model.Article{Category: target, Pin: pin}).
 			Order("created_at desc").
 			Offset((page - 1) * pageSize).
 			Limit(pageSize).
 			Find(&articles).Error
 	} else {
 		// return all articles including pinned and unpinned
-		err = db.Where("category = ?", target, pin).
+		err = db.Where(&model.Article{Category: target}).
 			Order("created_at desc").
 			Offset((page - 1) * pageSize).
 			Limit(pageSize).

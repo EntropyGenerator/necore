@@ -32,32 +32,32 @@ func CreateDocumentNode(parentId string, isFolder bool, private bool, name strin
 func DeleteDocumentNode(id string) error {
 	db := database.GetDocumentDatabase()
 	var node model.DocumentNode
-	db.Where("id = ?", id).First(&node)
+	db.Where(&model.DocumentNode{Id: id}).First(&node)
 
 	// Recursively delete all children
 	if node.IsFolder {
 		var children []model.DocumentNode
-		db.Where("parentId = ?", id).Find(&children)
+		db.Where(&model.DocumentNode{ParentId: id}).Find(&children)
 		for _, child := range children {
 			DeleteDocumentNode(child.Id)
-			db.Where("id = ?", child.Id).Delete(&model.DocumentNode{})
+			db.Where(&model.DocumentNode{Id: child.Id}).Delete(&model.DocumentNode{})
 		}
 	} else {
 		// Delete Files
 		os.RemoveAll(fmt.Sprintf("./contents/%s", id))
 	}
-	return db.Where("id = ?", id).Delete(&model.DocumentNode{}).Error
+	return db.Where(&model.DocumentNode{Id: id}).Delete(&model.DocumentNode{}).Error
 }
 
 func UpdateDocumentNodeName(id string, name string) error {
 	db := database.GetDocumentDatabase()
-	return db.Model(&model.DocumentNode{}).Where("id = ?", id).Updates(model.DocumentNode{Name: name, UpdateTime: time.Now().String()}).Error
+	return db.Model(&model.DocumentNode{}).Where(&model.DocumentNode{Id: id}).Updates(model.DocumentNode{Name: name, UpdateTime: time.Now().String()}).Error
 }
 
 func UpdateDocumentNodeContent(id string, content string, private bool, username string) error {
 	db := database.GetDocumentDatabase()
 	var doc model.DocumentNode
-	db.Model(&model.DocumentNode{}).Where("id = ?", id).First(&doc)
+	db.Model(&model.DocumentNode{}).Where(&model.DocumentNode{Id: id}).First(&doc)
 
 	// Add username to contributors list
 	var contributors []string
@@ -74,12 +74,12 @@ func UpdateDocumentNodeContent(id string, content string, private bool, username
 	}
 	newContributors, _ := json.Marshal(contributorsList)
 
-	return db.Model(&model.DocumentNode{}).Where("id = ?", id).Updates(model.DocumentNode{Content: content, Private: private, Contributors: string(newContributors)}).Error
+	return db.Model(&model.DocumentNode{}).Where(&model.DocumentNode{Id: id}).Updates(model.DocumentNode{Content: content, Private: private, Contributors: string(newContributors)}).Error
 }
 
 func UpdateDocumentNodeParentId(id string, parentId string) error {
 	db := database.GetDocumentDatabase()
-	return db.Model(&model.DocumentNode{}).Where("id = ?", id).Update("parentId", parentId).Error
+	return db.Model(&model.DocumentNode{}).Where(&model.DocumentNode{Id: id}).Update("parentId", parentId).Error
 }
 
 func GetDocumentNodeChildren(id string, private bool) ([]model.DocumentNode, error) {
@@ -88,10 +88,10 @@ func GetDocumentNodeChildren(id string, private bool) ([]model.DocumentNode, err
 	var err error
 	if private {
 		// all
-		err = db.Where("parentId = ?", id).Find(&nodes).Error
+		err = db.Where(&model.DocumentNode{ParentId: id}).Find(&nodes).Error
 	} else {
 		// public only
-		err = db.Where("parentId = ? and private = ?", id, false).Find(&nodes).Error
+		err = db.Where(&model.DocumentNode{ParentId: id, Private: false}).Find(&nodes).Error
 	}
 	if err != nil {
 		nodes = []model.DocumentNode{}
@@ -106,10 +106,10 @@ func GetDocumentContent(id string, private bool) (model.DocumentNode, error) {
 	var err error
 	if private {
 		// all
-		err = db.Where("id = ?", id).First(&node).Error
+		err = db.Where(&model.DocumentNode{Id: id}).First(&node).Error
 	} else {
 		// public only
-		err = db.Where("id = ? and private = ?", id, false).First(&node).Error
+		err = db.Where(&model.DocumentNode{Id: id, Private: false}).First(&node).Error
 	}
 	if err != nil {
 		return model.DocumentNode{}, err

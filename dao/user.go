@@ -155,7 +155,7 @@ func UpdateUserPassword(username string, password string) error {
 	db := database.GetUserDatabase()
 	var user *model.User
 	db.Where(&model.User{Username: username}).First(&user)
-	return db.Model(&user).Update("Password", hash).Error
+	return db.Model(&user).Updates(model.User{Password: hash}).Error
 }
 
 func UpdateUserInfo(username string, group string, tags string) error {
