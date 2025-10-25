@@ -79,7 +79,7 @@ func UpdateDocumentNodeContent(id string, content string, private bool, username
 
 func UpdateDocumentNodeParentId(id string, parentId string) error {
 	db := database.GetDocumentDatabase()
-	return db.Model(&model.DocumentNode{}).Where(&model.DocumentNode{Id: id}).Update("parentId", parentId).Error
+	return db.Model(&model.DocumentNode{}).Where(&model.DocumentNode{Id: id}).Updates(model.DocumentNode{ParentId: parentId}).Error
 }
 
 func GetDocumentNodeChildren(id string, private bool) ([]model.DocumentNode, error) {
