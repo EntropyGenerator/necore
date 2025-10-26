@@ -139,7 +139,7 @@ func GetAllUsers() ([]model.User, error) {
 
 func DeleteUserByUsername(username string) error {
 	db := database.GetUserDatabase()
-	return db.Delete(&model.User{Username: username}).Error
+	return db.Where(&model.User{Username: username}).Delete(&model.User{}).Error
 }
 
 func CheckUserPassword(input string, password string) bool {

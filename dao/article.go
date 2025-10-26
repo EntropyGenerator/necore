@@ -69,5 +69,5 @@ func DeleteArticle(id string) error {
 	db := database.GetArticleDatabase()
 	// Delete File
 	os.RemoveAll(fmt.Sprintf("./contents/%s", id))
-	return db.Delete(&model.Article{Id: id}).Error
+	return db.Where(&model.Article{Id: id}).Delete(&model.Article{}).Error
 }

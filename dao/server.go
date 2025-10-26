@@ -26,10 +26,5 @@ func UpdateServer(server model.Server) error {
 
 func DeleteServer(name string) error {
 	db := database.GetServerDatabase()
-	var server *model.Server
-	db.Where(&model.Server{Name: name}).First(&server)
-	if server == nil {
-		return nil
-	}
-	return db.Delete(&server).Error
+	return db.Where(&model.Server{Name: name}).Delete(&model.Server{}).Error
 }
