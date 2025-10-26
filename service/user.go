@@ -203,7 +203,7 @@ func UpdateUserInfo(c *fiber.Ctx) error {
 }
 
 func Logout(c *fiber.Ctx) error {
-	// TODO: expire token
+	// placeholder
 	return c.SendStatus(fiber.StatusOK)
 }
 
