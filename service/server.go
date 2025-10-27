@@ -103,7 +103,7 @@ func GetServerStatus(c *fiber.Ctx) error {
 			Icon:        status.Favicon,
 			PlayerCount: status.Players.Online,
 			Capacity:    status.Players.Max,
-			Latency:     int(status.Latency.Microseconds()),
+			Latency:     int(status.Latency.Milliseconds()),
 			Version:     status.Version.Name,
 		}
 		return c.Status(fiber.StatusOK).JSON(res)
