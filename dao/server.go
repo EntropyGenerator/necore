@@ -20,11 +20,11 @@ func AddServer(server model.Server) error {
 func UpdateServer(server model.Server) error {
 	db := database.GetServerDatabase()
 	var s *model.Server
-	db.Where(&model.Server{Name: server.Name}).First(&s)
+	db.Where(&model.Server{Id: server.Id}).First(&s)
 	return db.Model(&s).Updates(server).Error
 }
 
-func DeleteServer(name string) error {
+func DeleteServer(id string) error {
 	db := database.GetServerDatabase()
-	return db.Where(&model.Server{Name: name}).Delete(&model.Server{}).Error
+	return db.Where(&model.Server{Id: id}).Delete(&model.Server{}).Error
 }

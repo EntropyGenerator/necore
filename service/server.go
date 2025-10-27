@@ -9,6 +9,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/millkhan/mcstatusgo/v2"
 )
 
@@ -31,6 +32,7 @@ func GetServerList(c *fiber.Ctx) error {
 		})
 	}
 	type Response struct {
+		Id           string `json:"id"`
 		Name         string `json:"name"`
 		Icon         string `json:"icon"`
 		Description  string `json:"description"`
@@ -41,6 +43,7 @@ func GetServerList(c *fiber.Ctx) error {
 	res := make([]Response, len(servers))
 	for i, server := range servers {
 		res[i] = Response{
+			Id:           server.Id,
 			Name:         server.Name,
 			Icon:         server.Icon,
 			Description:  server.Description,
@@ -116,18 +119,17 @@ func AddServer(c *fiber.Ctx) error {
 			"error": "You are not allowed to add a server",
 		})
 	}
+	id := uuid.New().String()
 	var server model.Server
-	if err := c.BodyParser(&server); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": err.Error(),
-		})
-	}
+	server.Id = id
 	if err := dao.AddServer(server); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
-	return c.SendStatus(fiber.StatusOK)
+	return c.JSON(fiber.Map{
+		"id": id,
+	})
 }
 
 func DeleteServer(c *fiber.Ctx) error {
