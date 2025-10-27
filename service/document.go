@@ -128,6 +128,8 @@ func UpdateDocumentNodeContent(c *fiber.Ctx) error {
 			"error": err.Error(),
 		})
 	}
+
+	// TODO: who created the document is the author
 	if err := dao.UpdateDocumentNodeContent(id, string(marshalledContent), r.Private, username); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),

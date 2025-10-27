@@ -56,6 +56,7 @@ func SetupRoutes() {
 
 	serverGroup := (*router).Group("/server")
 	serverGroup.Get("/", service.GetServerList)
+	serverGroup.Post("/status", service.GetServerStatus)
 	serverGroup.Post("/", middleware.AuthNeeded(), service.AddServer)
 	serverGroup.Delete("/:id", middleware.AuthNeeded(), service.DeleteServer)
 	serverGroup.Patch("/", middleware.AuthNeeded(), service.AddServer)
