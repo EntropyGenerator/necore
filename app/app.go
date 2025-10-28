@@ -13,7 +13,11 @@ type fiberAppInstance struct {
 var instance *fiberAppInstance
 
 func init() {
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		Prefork:   true,
+		AppName:   "NMO Ecosystem Core",
+		BodyLimit: 512 * 1024 * 1024,
+	})
 
 	instance = &fiberAppInstance{
 		App: app,
