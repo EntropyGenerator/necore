@@ -68,13 +68,19 @@ func UpdateDocumentNodeContent(id string, content string, private bool, username
 	for _, contributor := range contributors {
 		deduplicatedContributors[contributor] = true
 	}
-	contributorsList := make([]string, 0, len(deduplicatedContributors))
+	contributorsList := make([]string, len(deduplicatedContributors))
 	for contributor := range deduplicatedContributors {
 		contributorsList = append(contributorsList, contributor)
 	}
 	newContributors, _ := json.Marshal(contributorsList)
 
-	return db.Model(&model.DocumentNode{}).Where(&model.DocumentNode{Id: id}).Updates(model.DocumentNode{Content: content, Private: private, Contributors: string(newContributors)}).Error
+	newtime := time.Now().String()
+	return db.Model(&model.DocumentNode{}).Where(&model.DocumentNode{Id: id}).
+		Updates(model.DocumentNode{
+			Content:      content,
+			Private:      private,
+			Contributors: string(newContributors),
+			UpdateTime:   newtime}).Error
 }
 
 func UpdateDocumentNodeParentId(id string, parentId string) error {
