@@ -64,13 +64,16 @@ func UpdateDocumentNodeContent(id string, content string, private bool, username
 	if doc.Contributors != "" {
 		json.Unmarshal([]byte(doc.Contributors), &contributors)
 	}
+	contributors = append(contributors, username)
 	deduplicatedContributors := make(map[string]bool, len(contributors))
 	for _, contributor := range contributors {
 		deduplicatedContributors[contributor] = true
 	}
-	contributorsList := make([]string, len(deduplicatedContributors))
+	contributorsList := make([]string, 0)
 	for contributor := range deduplicatedContributors {
-		contributorsList = append(contributorsList, contributor)
+		if contributor != "" {
+			contributorsList = append(contributorsList, contributor)
+		}
 	}
 	newContributors, _ := json.Marshal(contributorsList)
 
