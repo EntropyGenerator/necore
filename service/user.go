@@ -153,7 +153,7 @@ func UpdateUserPassword(c *fiber.Ctx) error {
 	}
 
 	// Check if user is admin or himself
-	if isAdmin || tokenUsername == payload.Id {
+	if !(isAdmin || tokenUsername == payload.Id) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
 	}
 
