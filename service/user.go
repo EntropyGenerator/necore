@@ -139,15 +139,9 @@ func DeleteUser(c *fiber.Ctx) error {
 }
 
 func UpdateUserPassword(c *fiber.Ctx) error {
-	userId := c.Params("id")
-
-	// Check if user is admin or himself
 	token := c.Locals("user").(*jwt.Token)
 	isAdmin := dao.IsUserInGroup(token, "admin")
 	tokenUsername := dao.GetUsernameFromToken(token)
-	if isAdmin || tokenUsername == userId {
-		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
-	}
 
 	type Payload struct {
 		Id       string `json:"id"`
@@ -156,6 +150,11 @@ func UpdateUserPassword(c *fiber.Ctx) error {
 	payload := new(Payload)
 	if err := c.BodyParser(payload); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+	}
+
+	// Check if user is admin or himself
+	if isAdmin || tokenUsername == payload.Id {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
 	}
 
 	if err := dao.UpdateUserPassword(payload.Id, payload.Password); err != nil {
