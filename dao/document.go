@@ -7,6 +7,8 @@ import (
 	"necore/model"
 	"os"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // func CreateDocumentCategory(categoryName string) error {
@@ -89,10 +91,25 @@ func UpdateDocumentNodeContent(id string, content string, private bool, username
 			UpdateTime:   newtime}).Error
 }
 
+func checkCyclicDocumentNode(parentId string, id string, db *gorm.DB) bool {
+	node := model.DocumentNode{}
+	db.Where(&model.DocumentNode{Id: parentId}).First(&node)
+	if node.Id == id {
+		return true
+	}
+	if node.ParentId == "" {
+		return false
+	}
+	return checkCyclicDocumentNode(node.ParentId, id, db)
+}
+
 func UpdateDocumentNodeParentId(id string, parentId string) error {
 	db := database.GetDocumentDatabase()
 	if parentId == id {
 		return fmt.Errorf("ParentId and Id cannot be the same")
+	}
+	if checkCyclicDocumentNode(parentId, id, db) {
+		return fmt.Errorf("Cyclic dependency detected")
 	}
 	return db.Model(&model.DocumentNode{}).Where(&model.DocumentNode{Id: id}).Updates(model.DocumentNode{ParentId: parentId}).Error
 }
