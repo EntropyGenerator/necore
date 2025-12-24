@@ -46,14 +46,14 @@ func GetArticleList(target string, page int, pageSize int, pin bool) ([]model.Ar
 	var err error
 	if pin {
 		err = db.Where(&model.Article{Category: target, Pin: pin}).
-			Order("created_at desc").
+			Order("date desc").
 			Offset((page - 1) * pageSize).
 			Limit(pageSize).
 			Find(&articles).Error
 	} else {
 		// return all articles including pinned and unpinned
 		err = db.Where(&model.Article{Category: target}).
-			Order("created_at desc").
+			Order("date desc").
 			Offset((page - 1) * pageSize).
 			Limit(pageSize).
 			Find(&articles).Error
