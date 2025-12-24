@@ -19,6 +19,9 @@ import (
 
 func CreateDocumentNode(parentId string, isFolder bool, private bool, name string, id string) error {
 	db := database.GetDocumentDatabase()
+	if parentId == id {
+		return fmt.Errorf("ParentId and Id cannot be the same")
+	}
 	node := model.DocumentNode{
 		ParentId: parentId,
 		IsFolder: isFolder,
@@ -88,6 +91,9 @@ func UpdateDocumentNodeContent(id string, content string, private bool, username
 
 func UpdateDocumentNodeParentId(id string, parentId string) error {
 	db := database.GetDocumentDatabase()
+	if parentId == id {
+		return fmt.Errorf("ParentId and Id cannot be the same")
+	}
 	return db.Model(&model.DocumentNode{}).Where(&model.DocumentNode{Id: id}).Updates(model.DocumentNode{ParentId: parentId}).Error
 }
 
