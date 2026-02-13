@@ -123,7 +123,7 @@ func GetDocumentNodeChildren(id string, private bool) ([]model.DocumentNode, err
 		err = db.Where(&model.DocumentNode{ParentId: id}).Find(&nodes).Error
 	} else {
 		// public only
-		err = db.Where(&model.DocumentNode{ParentId: id, Private: false}).Find(&nodes).Error
+		err = db.Where(map[string]interface{}{"ParentId": id, "Private": false}).Find(&nodes).Error
 	}
 	if err != nil {
 		nodes = []model.DocumentNode{}
@@ -141,7 +141,7 @@ func GetDocumentContent(id string, private bool) (model.DocumentNode, error) {
 		err = db.Where(&model.DocumentNode{Id: id}).First(&node).Error
 	} else {
 		// public only
-		err = db.Where(&model.DocumentNode{Id: id, Private: false}).First(&node).Error
+		err = db.Where(map[string]interface{}{"Id": id, "Private": false}).First(&node).Error
 	}
 	if err != nil {
 		return model.DocumentNode{}, err
