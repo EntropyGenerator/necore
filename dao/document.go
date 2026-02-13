@@ -82,7 +82,8 @@ func UpdateDocumentNodeContent(id string, content string, private bool, username
 	}
 	newContributors, _ := json.Marshal(contributorsList)
 
-	newtime := time.Now().String()
+	currenttime := time.Now()
+	newtime := fmt.Sprintf("%d-%s-%d %d:%d:%d", currenttime.Year(), currenttime.Month().String(), currenttime.Day(), currenttime.Hour(), currenttime.Minute(), currenttime.Second())
 	return db.Model(&model.DocumentNode{}).Where(&model.DocumentNode{Id: id}).
 		Updates(model.DocumentNode{
 			Content:      content,
