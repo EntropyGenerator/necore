@@ -44,7 +44,9 @@ func CreateDocumentNode(c *fiber.Ctx) error {
 	}
 	uuid := uuid.New().String()
 
-	if err := dao.CreateDocumentNode(r.ParentId, r.IsFolder, r.Private, r.Name, uuid); err != nil {
+	token := c.Locals("user").(*jwt.Token)
+	username := dao.GetUsernameFromToken(token)
+	if err := dao.CreateDocumentNode(r.ParentId, r.IsFolder, r.Private, r.Name, uuid, username); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})

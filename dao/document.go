@@ -19,17 +19,26 @@ import (
 // 	return db.Create(&category).Error
 // }
 
-func CreateDocumentNode(parentId string, isFolder bool, private bool, name string, id string) error {
+func getCurrentTime() string {
+	currenttime := time.Now()
+	newtime := fmt.Sprintf("%d-%s-%d %d:%d:%d", currenttime.Year(), currenttime.Month().String(), currenttime.Day(), currenttime.Hour(), currenttime.Minute(), currenttime.Second())
+	return newtime
+}
+
+func CreateDocumentNode(parentId string, isFolder bool, private bool, name string, id string, username string) error {
 	db := database.GetDocumentDatabase()
 	if parentId == id {
 		return fmt.Errorf("ParentId and Id cannot be the same")
 	}
+	contributors, _ := json.Marshal([]string{username})
 	node := model.DocumentNode{
-		ParentId: parentId,
-		IsFolder: isFolder,
-		Private:  private,
-		Name:     name,
-		Id:       id,
+		ParentId:     parentId,
+		IsFolder:     isFolder,
+		Private:      private,
+		Name:         name,
+		Id:           id,
+		Contributors: string(contributors),
+		UpdateTime:   getCurrentTime(),
 	}
 	return db.Create(&node).Error
 }
@@ -56,7 +65,11 @@ func DeleteDocumentNode(id string) error {
 
 func UpdateDocumentNodeName(id string, name string) error {
 	db := database.GetDocumentDatabase()
-	return db.Model(&model.DocumentNode{}).Where(&model.DocumentNode{Id: id}).Updates(model.DocumentNode{Name: name, UpdateTime: time.Now().String()}).Error
+	return db.Model(&model.DocumentNode{}).
+		Where(&model.DocumentNode{Id: id}).
+		Updates(model.DocumentNode{
+			Name:       name,
+			UpdateTime: getCurrentTime()}).Error
 }
 
 func UpdateDocumentNodeContent(id string, content string, private bool, username string) error {
@@ -82,14 +95,12 @@ func UpdateDocumentNodeContent(id string, content string, private bool, username
 	}
 	newContributors, _ := json.Marshal(contributorsList)
 
-	currenttime := time.Now()
-	newtime := fmt.Sprintf("%d-%s-%d %d:%d:%d", currenttime.Year(), currenttime.Month().String(), currenttime.Day(), currenttime.Hour(), currenttime.Minute(), currenttime.Second())
 	return db.Model(&model.DocumentNode{}).Where(&model.DocumentNode{Id: id}).
 		Updates(model.DocumentNode{
 			Content:      content,
 			Private:      private,
 			Contributors: string(newContributors),
-			UpdateTime:   newtime}).Error
+			UpdateTime:   getCurrentTime()}).Error
 }
 
 func checkCyclicDocumentNode(parentId string, id string, db *gorm.DB) bool {
