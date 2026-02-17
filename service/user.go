@@ -169,11 +169,6 @@ func UpdateUserInfo(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusOK)
 }
 
-func Logout(c *fiber.Ctx) error {
-	// placeholder
-	return c.SendStatus(fiber.StatusOK)
-}
-
 func GetUserAvatar(c *fiber.Ctx) error {
 	userId := c.Params("id")
 

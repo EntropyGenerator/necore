@@ -42,7 +42,6 @@ func SetupRoutes() {
 	authGroup.Post("/password", middleware.AuthNeeded(), service.UpdateUserPassword)
 	authGroup.Post("/avatar", middleware.AuthNeeded(), service.UpdateUserAvatar)
 	authGroup.Patch("/user", middleware.AuthNeeded(), service.UpdateUserInfo)
-	authGroup.Post("/logout", middleware.AuthNeeded(), service.Logout)
 
 	articleGroup := (*router).Group("/news")
 	articleGroup.Get("/total/:target", service.GetArticleCountByCategory)
