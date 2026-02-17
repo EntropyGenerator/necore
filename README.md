@@ -10,11 +10,11 @@ We provide direnv for development environment.
 
 ## Database and Backup
 
-Currently we use sqlite3 since it's lightweight and easy to backup. It's stored in `./database.sqlite3`.
+- Database: `./data/*.sqlite3`.
 
-We store article contents in `./contents/{id}/`.
+- Contents: `./contents/{id}/*`.
 
-Please backup these two files/folders.
+Please backup these files/folders.
 
 ## API
 

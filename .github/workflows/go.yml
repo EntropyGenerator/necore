@@ -31,5 +31,12 @@ jobs:
     - name: Upload to artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Binary
+        name: necore
         path: necore
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        token: ${{ secrets.GITHUBTOKEN }}
+        name: "${{ steps.get_version.outputs.VERSION }}"
+        files: necore
