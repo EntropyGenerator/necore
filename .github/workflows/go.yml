@@ -5,9 +5,8 @@ name: Go
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    tags:
+      - "v*.*.*" # i.e. 'v0.1.0'
 
 jobs:
 
@@ -27,17 +26,26 @@ jobs:
 
     - name: Build
       run: go build -o necore
-
+  
+  upload:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
     - name: Upload to artifact
       uses: actions/upload-artifact@v4
       with:
         name: necore
         path: necore
-    
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
     - name: Create Release
       uses: softprops/action-gh-release@v2
-      if: github.ref_type == 'tag'
       with:
         token: ${{ secrets.GITHUBTOKEN }}
         name: "${{ steps.get_version.outputs.VERSION }}"
-        files: necore
+        files: |
+          necore
+
