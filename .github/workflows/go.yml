@@ -25,6 +25,7 @@ jobs:
     - name: Install Dependencies
       run: |
         go get -u
+        echo ${{github.ref_type}}
 
     - name: Build
       run: go build -o necore
@@ -38,6 +39,7 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
     steps:
     - name: Get artifact
       uses: actions/download-artifact@v4
@@ -45,7 +47,6 @@ jobs:
         name: necore
     - name: Create release
       uses: softprops/action-gh-release@v2
-      if: github.ref_type == 'tag'
       with:
         token: ${{ secrets.GITHUBTOKEN }}
         name: "${{ steps.get_version.outputs.VERSION }}"
