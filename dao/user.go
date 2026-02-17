@@ -58,18 +58,9 @@ func GetUserGroupsFromToken(t *jwt.Token) []string {
 	var groups []string
 	err := json.Unmarshal([]byte(claims.(string)), &groups)
 	if err != nil {
-		// log.Println(err)
 		return []string{}
 	}
 	return groups
-
-	// gjsonResult := gjson.Get(claims.(string), "@this")
-	// var result []string
-	// for _, value := range gjsonResult.Array() {
-	// 	result = append(result, value.String())
-	// }
-
-	// return result
 }
 
 func GetUserTagsFromToken(t *jwt.Token) []string {
@@ -81,18 +72,9 @@ func GetUserTagsFromToken(t *jwt.Token) []string {
 	var tags []string
 	err := json.Unmarshal([]byte(claims.(string)), &tags)
 	if err != nil {
-		// log.Println(err)
 		return []string{}
 	}
 	return tags
-
-	// gjsonResult := gjson.Get(claims.(string), "@this")
-	// var result []string
-	// for _, value := range gjsonResult.Array() {
-	// 	result = append(result, value.String())
-	// }
-
-	// return result
 }
 
 func IsUserInGroup(t *jwt.Token, group string) bool {

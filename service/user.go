@@ -37,29 +37,13 @@ func GetUserInfo(c *fiber.Ctx) error {
 	var groups []string
 	err = json.Unmarshal([]byte(userModel.Group), &groups)
 	if err != nil {
-		// log.Println(err, " User info groups")
 		groups = []string{}
 	}
 	var tags []TagEntity
 	err = json.Unmarshal([]byte(userModel.Tags), &tags)
 	if err != nil {
-		// log.Println(err, " User info tags")
 		tags = []TagEntity{}
 	}
-	// gjsonResult := gjson.Get(userModel.Group, "@this")
-	// var groups []string
-	// for _, value := range gjsonResult.Array() {
-	// 	groups = append(groups, value.String())
-	// }
-	// gjsonResult = gjson.Get(userModel.Tags, "@this")
-	// var tags []TagEntity
-	// for _, value := range gjsonResult.Array() {
-	// 	tags = append(tags, TagEntity{
-	// 		Text:     value.Get("text").String(),
-	// 		Color:    value.Get("color").String(),
-	// 		TagColor: value.Get("tagColor").String(),
-	// 	})
-	// }
 	return c.JSON(fiber.Map{
 		"user": UserInfo{
 			Username: userModel.Username,
@@ -89,29 +73,13 @@ func GetUserList(c *fiber.Ctx) error {
 		var groups []string
 		err = json.Unmarshal([]byte(user.Group), &groups)
 		if err != nil {
-			// log.Println(err, " User info groups")
 			groups = []string{}
 		}
 		var tags []TagEntity
 		err = json.Unmarshal([]byte(user.Tags), &tags)
 		if err != nil {
-			// log.Println(err, " User info Tags")
 			tags = []TagEntity{}
 		}
-		// gjsonResult := gjson.Get(user.Group, "@this")
-		// var groups []string
-		// for _, value := range gjsonResult.Array() {
-		// 	groups = append(groups, value.String())
-		// }
-		// gjsonResult = gjson.Get(user.Tags, "@this")
-		// var tags []TagEntity
-		// for _, value := range gjsonResult.Array() {
-		// 	tags = append(tags, TagEntity{
-		// 		Text:     value.Get("text").String(),
-		// 		Color:    value.Get("color").String(),
-		// 		TagColor: value.Get("tagColor").String(),
-		// 	})
-		// }
 		userinfos[i] = UserInfo{
 			Username: user.Username,
 			Group:    groups,

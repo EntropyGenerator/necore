@@ -11,14 +11,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// func CreateDocumentCategory(categoryName string) error {
-// 	db := database.GetDocumentDatabase()
-// 	category := model.DocumentCategory{
-// 		Category: categoryName,
-// 	}
-// 	return db.Create(&category).Error
-// }
-
 func getCurrentTime() string {
 	currenttime := time.Now()
 	newtime := fmt.Sprintf("%d-%s-%d %d:%d:%d", currenttime.Year(), currenttime.Month().String(), currenttime.Day(), currenttime.Hour(), currenttime.Minute(), currenttime.Second())

@@ -56,29 +56,13 @@ func Login(c *fiber.Ctx) error {
 	var groups []string
 	err = json.Unmarshal([]byte(userModel.Group), &groups)
 	if err != nil {
-		// log.Println(err)
 		groups = []string{}
 	}
 	var tags []TagEntity
 	err = json.Unmarshal([]byte(userModel.Tags), &tags)
 	if err != nil {
-		// log.Println(err)
 		tags = []TagEntity{}
 	}
-	// gjsonResult := gjson.Get(userModel.Group, "@this")
-	// var groups []string
-	// for _, value := range gjsonResult.Array() {
-	// 	groups = append(groups, value.String())
-	// }
-	// gjsonResult = gjson.Get(userModel.Tags, "@this")
-	// var tags []TagEntity
-	// for _, value := range gjsonResult.Array() {
-	// 	tags = append(tags, TagEntity{
-	// 		Text:     value.Get("text").String(),
-	// 		Color:    value.Get("color").String(),
-	// 		TagColor: value.Get("tagColor").String(),
-	// 	})
-	// }
 	userInfo := UserInfo{
 		Username: userModel.Username,
 		Group:    groups,
