@@ -1,12 +1,10 @@
 # Necore
 
-Backend of [neco](https://github.com/EntropyGenerator/neco), NMO Ecosystem.
+High performance backend of [neco](https://github.com/EntropyGenerator/neco)(NMO Ecosystem) based on gofiber.
 
-## Installation
+## Development
 
-Same as a golang project. `go run dev` for development, `go build` for production.
-
-We provide direnv for development environment.
+`direnv` can be used for development environment.
 
 ## Database and Backup
 
@@ -14,10 +12,15 @@ We provide direnv for development environment.
 
 - Contents: `./contents/{id}/*`.
 
-Please backup these files/folders.
+Please backup these files/folders when necessary.
 
 ## API
 
-Refer to Neco's `API.md`.
+Please refer to Neco's [`API.md`](https://github.com/EntropyGenerator/neco/blob/main/API.md).
 
-Port: 3000
+## Config
+
+`.env` is used for configuration.
+
+- `PORT`: Port of the server, default is `3000`.
+- `SECRET`: Secret key for JWT.

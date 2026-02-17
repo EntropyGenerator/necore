@@ -1,7 +1,10 @@
 package app
 
 import (
+	"fmt"
 	"log"
+	"necore/config"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -29,5 +32,9 @@ func GetInstance() *fiberAppInstance {
 }
 
 func Start() {
-	log.Fatal(instance.App.Listen(":3000"))
+	port, err := strconv.Atoi(config.Config("PORT"))
+	if err != nil {
+		port = 3000
+	}
+	log.Fatal(instance.App.Listen(fmt.Sprintf(":%d", port)))
 }
