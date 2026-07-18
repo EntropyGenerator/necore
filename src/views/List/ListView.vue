@@ -95,7 +95,8 @@ onMounted(async () => {
 
 <template>
   <div class="list-area">
-    <div class="list-item-container">
+    <section class="list-item-container">
+      <h1 id="link-section-title" class="list-title mcfont">服务器列表</h1>
       <ListItem
         class="list-item"
         v-for="(server, index) in serverList"
@@ -109,22 +110,12 @@ onMounted(async () => {
         @dblclick="focusIndex === index ? copy(server.serverUrl || 'undefined') : null"
         :type="focusIndex === index ? 'focus' : ''"
       />
-    </div>
-    <div class="server-options">
-      <MinecraftButtonClassic class="server-option" @click="refresh">刷新</MinecraftButtonClassic>
-      <MinecraftButtonClassic
-        class="server-option"
-        @click="
-          focusIndex !== -1
-            ? copy(serverList[focusIndex].serverUrl || 'undefined')
-            : toast.warning('未选择服务器！')
-        "
-        >加入服务器</MinecraftButtonClassic
-      >
-    </div>
+    </section>
 
-    <section class="link-container" aria-labelledby="link-section-title">
-      <h2 id="link-section-title" class="link-section-title">友情链接</h2>
+    <div style="height: 24px" />
+
+    <section class="list-item-container" aria-labelledby="link-section-title">
+      <h1 id="link-section-title" class="list-title mcfont">友情链接</h1>
       <div class="link-list-scroll">
         <a
           v-for="(link, i) in linkEntries"
@@ -150,6 +141,8 @@ onMounted(async () => {
         </a>
       </div>
     </section>
+
+    <div style="height: 24px" />
   </div>
 </template>
 
@@ -170,24 +163,13 @@ onMounted(async () => {
 }
 
 .list-item-container {
-  height: 72vh;
+  height: auto;
   width: 100%;
-  border-top: 4px solid #eeeeee;
-  border-bottom: 4px solid #eeeeee;
+  border-top: 2px solid #aaaaaa;
+  border-bottom: 2px solid #aaaaaa;
   padding: 20px 0;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.75);
   overflow-y: auto;
-}
-
-.list-area::before {
-  position: absolute;
-  content: '';
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 100%;
-  backdrop-filter: blur(2px);
-  background-color: rgba(0, 0, 0, 0.2);
 }
 
 .list-item {
@@ -210,21 +192,11 @@ onMounted(async () => {
   width: 12rem;
 }
 
-.link-container {
-  width: 100%;
-  border-top: 1px solid #eeeeee;
-  border-bottom: 1px solid #eeeeee;
-  background-color: rgba(0, 0, 0, 0.6);
-  padding: 1rem 0;
-  z-index: 1;
-  margin-top: 3rem;
-}
-
-.link-section-title {
+.list-title {
   margin: 0;
   padding: 0 1rem 0.75rem;
   color: #fff;
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   user-select: none;
   text-align: center;
 }
