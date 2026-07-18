@@ -41,7 +41,7 @@ onMounted(async () => {
     <section class="news-hero nmo-hero-panel" aria-labelledby="news-hero-title">
       <div class="news-hero-header">
         <div>
-          <h1 id="news-hero-title" class="nmo-section-title">新闻与活动</h1>
+          <h1 id="news-hero-title" class="nmo-section-title mcfont">新闻与活动</h1>
           <p class="nmo-section-desc">NMO 最近发生了什么事？</p>
         </div>
       </div>

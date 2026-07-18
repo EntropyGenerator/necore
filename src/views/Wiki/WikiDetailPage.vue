@@ -145,9 +145,7 @@ onMounted(async () => {
   padding-bottom: 3rem;
 }
 
-.detail-page * {
-  font-family: 'Ark Latin', 'Cubic 11', system-ui, Avenir, Helvetica, Arial, sans-serif !important;
-}
+
 
 .detail-topbar {
   width: 100%;

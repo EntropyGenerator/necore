@@ -86,7 +86,7 @@ onMounted(() => {
       <RouterLink
         v-for="(item, index) in navItems"
         :key="item.url"
-        class="nav-item"
+        class="nav-item mcfont"
         :to="item.url"
         :aria-current="activeIndex === index ? 'page' : undefined"
         @click="soundOn"
