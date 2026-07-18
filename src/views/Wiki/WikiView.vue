@@ -104,7 +104,7 @@ onMounted(async () => {
 <template>
   <div class="wiki-page">
     <section class="wiki-hero" aria-labelledby="wiki-hero-title">
-      <h1 id="wiki-hero-title" class="wiki-hero-title">百科</h1>
+      <h1 id="wiki-hero-title" class="wiki-hero-title mcfont">百科</h1>
       <p class="wiki-hero-desc">NMO Minecraft 游戏知识库</p>
     </section>
 
@@ -115,10 +115,7 @@ onMounted(async () => {
       >
         词条百科
       </button>
-      <button
-        :class="['wiki-tab', { active: activeTab === 'item' }]"
-        @click="activeTab = 'item'"
-      >
+      <button :class="['wiki-tab', { active: activeTab === 'item' }]" @click="activeTab = 'item'">
         物品百科
       </button>
     </div>
@@ -131,11 +128,7 @@ onMounted(async () => {
           v-model="searchQuery"
           placeholder="搜索名称..."
         />
-        <button
-          v-if="hasActiveFilters"
-          class="wiki-clear-btn"
-          @click="clearFilters"
-        >
+        <button v-if="hasActiveFilters" class="wiki-clear-btn" @click="clearFilters">
           清除筛选
         </button>
       </div>
@@ -226,7 +219,7 @@ onMounted(async () => {
   gap: 1.5rem;
   padding: 5rem clamp(1rem, 4vw, 3rem) 3rem;
   box-sizing: border-box;
-  background: linear-gradient(135deg, var(--w-bg) 0%,  var(--w-bg-end) 100%);
+  background: linear-gradient(135deg, var(--w-bg) 0%, var(--w-bg-end) 100%);
   color: var(--w-text);
 }
 
@@ -423,7 +416,7 @@ onMounted(async () => {
   border: 2px solid var(--w-border);
   box-shadow:
     inset -1px -1px 0 0 var(--w-shadow),
-    inset 1px 1px 0 0 rgba(255,255,255,0.8),
+    inset 1px 1px 0 0 rgba(255, 255, 255, 0.8),
     0 0.25rem 0.5rem var(--w-shadow);
   cursor: pointer;
   font: inherit;
