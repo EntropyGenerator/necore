@@ -99,6 +99,10 @@ func SetupRoutes() {
 	botGroup.Delete("/ws/kick/:session_id", middleware.AuthNeeded(), service.KickConnection)
 
 	wikiGroup := (*router).Group("/wiki")
+	wikiGroup.Get("/types", service.GetWikiTypes)
+	wikiGroup.Get("/tags", service.GetWikiTags)
+	wikiGroup.Post("/tags", middleware.AuthNeeded(), service.CreateWikiTag)
+	wikiGroup.Delete("/tags/:id", middleware.AuthNeeded(), service.DeleteWikiTag)
 	wikiGroup.Get("/glossary", service.GetGlossaryList)
 	wikiGroup.Get("/glossary/:id", service.GetGlossaryById)
 	wikiGroup.Get("/item", service.GetItemList)

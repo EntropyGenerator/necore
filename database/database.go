@@ -57,7 +57,10 @@ func ConnectSqlite() {
 	if err != nil {
 		panic("failed to connect wiki database")
 	}
-	wikiDatabase.AutoMigrate(&model.Glossary{}, &model.Item{})
+	wikiDatabase.AutoMigrate(&model.Glossary{}, &model.Item{}, &model.WikiTag{})
+
+	var count int64
+	wikiDatabase.Model(&model.WikiTag{}).Count(&count)
 }
 
 func GetUserDatabase() *gorm.DB {
