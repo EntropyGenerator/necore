@@ -13,9 +13,34 @@ import (
 )
 
 func GetWikiTypes(c *fiber.Ctx) error {
+	glossaryTags, err := dao.GetWikiTagsByCategory("glossary")
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+	itemTags, err := dao.GetWikiTagsByCategory("item")
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	glossaryNames := make([]string, len(glossaryTags))
+	for i, t := range glossaryTags {
+		glossaryNames[i] = t.Name
+	}
+	itemNames := make([]string, len(itemTags))
+	for i, t := range itemTags {
+		itemNames[i] = t.Name
+	}
+
+	if glossaryNames == nil {
+		glossaryNames = []string{}
+	}
+	if itemNames == nil {
+		itemNames = []string{}
+	}
+
 	return c.JSON(fiber.Map{
-		"glossaryTypes": model.GlossaryTypes,
-		"itemTypes":     model.ItemTypes,
+		"glossaryTypes": glossaryNames,
+		"itemTypes":     itemNames,
 	})
 }
 

@@ -57,7 +57,28 @@ func ConnectSqlite() {
 	if err != nil {
 		panic("failed to connect wiki database")
 	}
-	wikiDatabase.AutoMigrate(&model.Glossary{}, &model.Item{})
+	wikiDatabase.AutoMigrate(&model.Glossary{}, &model.Item{}, &model.WikiTag{})
+
+	var count int64
+	wikiDatabase.Model(&model.WikiTag{}).Count(&count)
+	if count == 0 {
+		defaultGlossaryTags := []string{"服务器", "社群", "概念", "地理", "人物", "其它"}
+		for _, name := range defaultGlossaryTags {
+			wikiDatabase.Create(&model.WikiTag{
+				Id:       name,
+				Category: "glossary",
+				Name:     name,
+			})
+		}
+		defaultItemTags := []string{"工具", "武器", "防具", "食物", "方块", "装饰品", "杂项", "其它"}
+		for _, name := range defaultItemTags {
+			wikiDatabase.Create(&model.WikiTag{
+				Id:       name,
+				Category: "item",
+				Name:     name,
+			})
+		}
+	}
 }
 
 func GetUserDatabase() *gorm.DB {
