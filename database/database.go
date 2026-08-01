@@ -61,24 +61,6 @@ func ConnectSqlite() {
 
 	var count int64
 	wikiDatabase.Model(&model.WikiTag{}).Count(&count)
-	if count == 0 {
-		defaultGlossaryTags := []string{"待设置"}
-		for _, name := range defaultGlossaryTags {
-			wikiDatabase.Create(&model.WikiTag{
-				Id:       name,
-				Category: "glossary",
-				Name:     name,
-			})
-		}
-		defaultItemTags := []string{"待设置"}
-		for _, name := range defaultItemTags {
-			wikiDatabase.Create(&model.WikiTag{
-				Id:       name,
-				Category: "item",
-				Name:     name,
-			})
-		}
-	}
 }
 
 func GetUserDatabase() *gorm.DB {
