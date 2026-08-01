@@ -62,7 +62,7 @@ func ConnectSqlite() {
 	var count int64
 	wikiDatabase.Model(&model.WikiTag{}).Count(&count)
 	if count == 0 {
-		defaultGlossaryTags := []string{"服务器", "社群", "概念", "地理", "人物", "其它"}
+		defaultGlossaryTags := []string{"待设置"}
 		for _, name := range defaultGlossaryTags {
 			wikiDatabase.Create(&model.WikiTag{
 				Id:       name,
@@ -70,7 +70,7 @@ func ConnectSqlite() {
 				Name:     name,
 			})
 		}
-		defaultItemTags := []string{"工具", "武器", "防具", "食物", "方块", "装饰品", "杂项", "其它"}
+		defaultItemTags := []string{"待设置"}
 		for _, name := range defaultItemTags {
 			wikiDatabase.Create(&model.WikiTag{
 				Id:       name,
