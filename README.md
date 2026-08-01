@@ -1,229 +1,193 @@
-# Necore
+# Neco
 
-Necore 是 NMO Ecosystem 的后端服务，为前端项目 Neco 提供用户认证、文章管理、服务器状态同步、文档管理、文件上传、Bot WebSocket 推送等能力。
+Neco 是 NMO Ecosystem 的前端项目，用于展示服务器列表、活动/新闻内容、文档内容，并提供面向管理员的内容管理后台。项目整体采用 Vue 3 + TypeScript + Vite 构建，界面风格以 Minecraft 像素风为主，并尽量保持键盘导航与屏幕阅读器可用。
 
-项目基于 Go + Fiber + GORM + SQLite 实现，默认 API 前缀为：
-
-```text
-/necore
-```
+后端项目为 [`necore`](../necore)，前端默认通过 `/necore` 前缀访问后端 API。
 
 ## 功能概览
 
-- **用户与鉴权**
-  - JWT 登录认证；
-  - 用户创建、删除、密码修改、头像修改；
-  - 用户权限组与标签管理；
-  - TokenVersion 机制，用于在用户权限/密码变化后使旧 JWT 失效。
+### 公开页面
 
-- **文章/新闻管理**
-  - 支持文章创建、编辑、删除；
-  - 支持文章分类、置顶、活动起止时间；
-  - 支持 Markdown、图片、PDF 等内容块；
-  - 支持文章附件上传与删除；
-  - 支持保存文章后通过 WebSocket 向 Bot 推送 `article_updated` 事件；
-  - 支持按指定 WebSocket session 定向推送。
+- **大厅页**：展示社团/站点入口与介绍内容。
+- **服务器列表**：展示服务器名称、图标、描述、在线地图链接与实时状态。
+  - 支持同步 Minecraft 服务器状态。
+  - 支持展示在线人数、容量、版本、延迟与服务器图标。
+  - 对同步成功且返回玩家样本的服务器，支持展开在线玩家头像列表。
+  - 玩家列表默认一排展示；一排放不下时自动变成两排；两排仍放不下时横向滚动。
+  - 玩家头像可通过鼠标悬停或 Tab 聚焦查看名称。
+- **活动页/新闻页**：展示文章列表、置顶文章、活动时间与文章详情。
+- **文档页**：展示公开文档树与文档内容。
+- **关于页**：展示外部链接与相关信息。
 
-- **服务器列表与状态同步**
-  - 管理服务器名称、图标、描述、在线地图、实时状态地址；
-  - 查询 Minecraft 服务器状态；
-  - 返回在线人数、容量、版本、延迟、图标；
-  - 可返回玩家 sample 列表，供前端展示玩家头像。
+### 管理后台
 
-- **文档管理**
-  - 树形文档节点；
-  - 文件夹/文档节点；
-  - 公开/私有文档；
-  - 文档内容、贡献者、更新时间维护；
-  - 文档附件上传与删除。
+管理后台入口为：
 
-- **Bot WebSocket**
-  - Bot Token 创建、列表、删除；
-  - WebSocket 鉴权连接；
-  - 心跳检测与超时断开；
-  - 在线连接状态查询；
-  - 主动踢出连接；
-  - 连接日志记录；
-  - 5 分钟内连续相同日志去重，避免自动重连刷屏。
+```text
+/management
+```
+
+已包含以下管理模块：
+
+- **用户管理**：创建用户、修改权限、修改标签、删除用户。
+- **社团管理**：维护首页/社团相关展示内容。
+- **服务器管理**：维护服务器名称、图标、描述、地图地址、实时同步配置。
+- **文章管理**：创建、编辑、上传附件、删除文章。
+  - 保存文章时会弹出 Dialog，允许管理员选择是否推送更新到在线 WebSocket Bot。
+  - 支持选择一个或多个 Bot 连接进行定向推送。
+- **文档管理**：管理文档树、文件夹、公开/私有文档内容与附件。
+- **机器人连接管理**：管理 Bot Token、查看在线连接、查看连接日志、踢出异常连接。
+
+### 权限组
+
+前端会根据登录用户的 `group` 字段决定后台能力。当前主要权限包括：
+
+| 权限组 | 用途 |
+|---|---|
+| `admin` | 超级管理员，拥有全部管理权限 |
+| `news_admin` | 文章/新闻管理 |
+| `server_admin` | 服务器列表管理 |
+| `document_admin` | 文档管理 |
+| `bot_admin` | Bot Token 与 WebSocket 连接管理 |
 
 ## 技术栈
 
-- Go 1.25+
-- Fiber v2
-- gofiber/contrib/websocket
-- gofiber/contrib/jwt
-- GORM
-- SQLite
-- mcstatusgo
-- bcrypt
-- JWT HS256
+- Vue 3
+- TypeScript
+- Vite
+- Vue Router
+- Axios
+- md-editor-v3
+- vue-toastification
+- vue-clipboard3
+- mitt
 
 ## 项目结构
 
 ```text
 .
-├── app                         # Fiber App 初始化与启动
-├── config                      # .env 查找、创建、加载与默认配置
-├── controller
-│   ├── middleware              # JWT 鉴权中间件
-│   └── router                  # API 路由注册
-├── contents                    # 上传文件保存目录，需要持久化备份
-├── dao                         # 数据访问层
-├── data                        # SQLite 数据库目录，需要持久化备份
-├── database                    # SQLite 连接与 AutoMigrate
-├── model                       # GORM 模型
-├── service                     # 业务逻辑层
-├── util                        # token、文件名安全处理等工具
-├── ws                          # Bot WebSocket Hub
-├── main.go
-├── go.mod
-└── routes_and_security_test.go
+├── API.md                         # 前后端 API 约定文档
+├── index.html
+├── package.json
+├── vite.config.ts
+└── src
+    ├── api                        # API 封装
+    │   ├── api.ts                 # axios 实例
+    │   ├── auth.ts                # 登录、用户、权限相关接口
+    │   ├── bot.ts                 # Bot Token 与 WebSocket 状态接口
+    │   ├── documents.ts           # 文档接口
+    │   ├── newslist.ts            # 文章接口
+    │   └── serverlist.ts          # 服务器列表与状态接口
+    ├── components                 # 通用组件
+    │   ├── utils                  # Minecraft 风格按钮、输入框、Dialog 等
+    │   └── icons
+    ├── eventbus                   # 全局事件总线
+    ├── router                     # 路由定义
+    ├── theme-override             # 第三方组件主题覆盖
+    └── views                      # 页面
+        ├── Activity
+        ├── Auth
+        ├── Documents
+        ├── List
+        ├── Lobby
+        ├── Management
+        └── News
 ```
 
 ## 环境要求
 
-- Go 1.25+
-- CGO 可用环境：SQLite 驱动依赖 `github.com/mattn/go-sqlite3`
+建议使用：
+
+- Node.js 22+
+- npm 11+
 
 安装依赖：
 
 ```bash
-go mod download
+npm install
 ```
 
-启动开发服务：
+启动开发服务器：
 
 ```bash
-go run .
+npm run dev
 ```
 
-运行测试：
+类型检查与构建：
 
 ```bash
-go test ./...
+npm run type-check
+npm run build
 ```
 
-构建：
+本地预览构建结果：
 
 ```bash
-go build -o necore .
+npm run preview
 ```
 
-## 配置
+代码格式化与检查：
 
-配置文件使用 `.env`。服务启动时会按顺序查找或创建配置文件：
-
-1. 环境变量 `NECORE_CONFIG_FILE` 指定的路径；
-2. 当前工作目录下的 `.env`，仅当当前目录看起来像项目根目录时使用；
-3. 可执行文件同目录下的 `.env`；
-4. 用户配置目录中的 `necore/.env`。
-
-环境变量优先级高于 `.env` 文件。
-
-常用配置：
-
-| 配置项 | 默认值 | 说明 |
-|---|---:|---|
-| `PORT` | `3000` | HTTP 服务端口 |
-| `SECRET` | 自动生成 | JWT 签名密钥，修改后会使已有 JWT 全部失效 |
-| `BOT_LOG_BUFFER_SIZE` | `1000` 或 `.env` 中配置值 | Bot 连接日志最多保留条数 |
-| `BOT_HEARTBEAT_TIMEOUT_SECONDS` | `90` | Bot 心跳超时时间，超过该时间未收到心跳则主动断开 |
-
-`.env` 示例：
-
-```env
-PORT=3000
-SECRET=please-change-me
-BOT_LOG_BUFFER_SIZE=2000
-BOT_HEARTBEAT_TIMEOUT_SECONDS=90
+```bash
+npm run format
+npm run lint
 ```
 
-## 数据与备份
+## 后端地址配置
 
-运行时数据默认位于：
+前端 API 封装位于：
 
 ```text
-data/*.sqlite3
-contents/{objectId}/*
+src/api/api.ts
 ```
 
-建议定期备份：
+通常需要确保 axios 的 baseURL 指向 necore 的 `/necore` 前缀，例如：
 
-- `data/user.sqlite3`
-- `data/article.sqlite3`
-- `data/server.sqlite3`
-- `data/document.sqlite3`
-- `data/bot_connection.sqlite3`
-- `contents/`
-- `.env`
-
-`SECRET` 必须保密。泄漏后应立即更换，并要求用户重新登录。
-
-## 初始管理员
-
-当前项目没有内置公开注册入口。可以通过以下方式创建初始管理员：
-
-1. 临时启用或编写初始化脚本调用 `dao.AddUserByUsername`；
-2. 手动向 SQLite 插入用户记录；
-3. 使用已有管理员调用用户创建接口。
-
-管理员用户的 `group` 字段应包含：
-
-```json
-["admin"]
+```text
+http://localhost:3000/necore
 ```
 
-密码需要使用 bcrypt 哈希保存。项目中的 `dao.DebugTestPassword()` 可用于开发时打印测试密码哈希，生产环境不要启用调试输出。
+如果前端和后端同源部署，可以通过反向代理把 `/necore` 转发给后端。
 
-## 权限组
+## 服务器实时状态与玩家头像
 
-| 权限组 | 说明 |
-|---|---|
-| `admin` | 超级管理员 |
-| `news_admin` | 文章/新闻管理 |
-| `server_admin` | 服务器列表管理 |
-| `document_admin` | 文档管理 |
-| `bot_admin` | Bot Token 与连接管理 |
+服务器实时状态由后端接口提供：
 
-## API 概览
+```text
+POST /necore/server/status
+```
 
-所有接口默认带 `/necore` 前缀。
+前端会在服务器条目 `realtime === true` 时请求该接口。如果返回 `online: true`，前端会展示在线人数、容量、版本等信息。
 
-### 基础
+当后端返回 `players` 列表时，前端会在服务器卡片下方提供可展开的玩家头像列表。头像获取策略为：
 
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| `GET` | `/slogan` | 获取随机标语 |
+1. 优先使用 UUID 请求头像；
+2. 没有 UUID 时使用玩家名请求头像；
+3. 多个头像源按顺序兜底；
+4. 最终回退到默认 Steve 头像。
 
-### 认证与用户
+注意：Minecraft 状态协议中的玩家列表通常是 sample，不保证包含全部在线玩家。部分服务器也可能隐藏 sample。
 
-| 方法 | 路径 | 权限 | 说明 |
-|---|---|---|---|
-| `POST` | `/auth/login` | 无 | 登录 |
-| `GET` | `/auth/status` | 登录 | 校验登录状态 |
-| `POST` | `/auth/register` | `admin` | 创建用户 |
-| `GET` | `/auth/user/:id` | 无 | 获取用户公开信息 |
-| `GET` | `/auth/avatar/:id` | 无 | 获取用户头像 |
-| `GET` | `/auth/userlist` | 登录 | 获取用户列表 |
-| `DELETE` | `/auth/user/:id` | `admin` | 删除用户 |
-| `POST` | `/auth/password` | `admin` 或本人 | 修改密码 |
-| `POST` | `/auth/avatar` | `admin` 或本人 | 修改头像 |
-| `PATCH` | `/auth/user` | `admin` | 修改用户权限与标签 |
+## Bot 管理与文章推送
 
-### 文章
+机器人连接管理页面用于维护 necore 的 `/bots` WebSocket 连接。
 
-| 方法 | 路径 | 权限 | 说明 |
-|---|---|---|---|
-| `GET` | `/news/total/:target` | 无 | 获取分类文章数量 |
-| `POST` | `/news/list` | 无 | 获取文章列表 |
-| `GET` | `/news/detail/:id` | 无 | 获取文章详情 |
-| `POST` | `/news/create` | `admin`/`news_admin` | 创建空文章并返回 ID |
-| `PATCH` | `/news/:id` | `admin`/`news_admin` | 更新文章，可选择 WebSocket 推送 |
-| `POST` | `/news/upload/:id` | `admin`/`news_admin` | 上传文章附件 |
-| `DELETE` | `/news/upload/:id` | `admin`/`news_admin` | 删除文章附件 |
-| `DELETE` | `/news/:id` | `admin`/`news_admin` | 删除文章 |
+主要能力：
 
-文章更新推送字段：
+- 创建 Bot Token；
+- 查看 Token 列表；
+- 删除 Token；
+- 查看在线 Bot 连接；
+- 踢出指定连接；
+- 查看后端连接日志。
+
+文章管理页在保存文章时会弹出推送选择 Dialog：
+
+- 选择“不推送”：只保存文章；
+- 选择“保存并推送”：保存文章，并将 `article_updated` 事件推送到选中的 WebSocket 连接；
+- 选择“取消”：不保存。
+
+推送依赖后端支持：
 
 ```json
 {
@@ -232,202 +196,35 @@ contents/{objectId}/*
 }
 ```
 
-如果 `doesNotify` 为 `false`，不会推送。  
-如果 `doesNotify` 为 `true` 且 `notifySessionIds` 为空，则广播到全部在线 Bot。  
-如果 `notifySessionIds` 非空，则只推送到指定 session。
+## 无障碍设计约定
 
-### 服务器
+项目中的管理页与交互组件应尽量满足以下要求：
 
-| 方法 | 路径 | 权限 | 说明 |
-|---|---|---|---|
-| `GET` | `/server/` | 无 | 获取服务器列表 |
-| `POST` | `/server/status` | 无 | 查询服务器实时状态 |
-| `GET` | `/server/create` | `admin`/`server_admin` | 创建服务器条目 |
-| `PATCH` | `/server/` | `admin`/`server_admin` | 更新服务器条目 |
-| `DELETE` | `/server/:id` | `admin`/`server_admin` | 删除服务器条目 |
-
-`/server/status` 请求：
-
-```json
-{
-  "serverUrl": "example.com:25565"
-}
-```
-
-响应示例：
-
-```json
-{
-  "online": true,
-  "icon": "data:image/png;base64,...",
-  "playerCount": 12,
-  "capacity": 100,
-  "latency": 42,
-  "version": "1.20.1",
-  "players": [
-    {
-      "name": "Steve",
-      "uuid": "8667ba71-b85a-4004-af54-457a9734eed7"
-    }
-  ]
-}
-```
-
-注意：`players` 来自 Minecraft 状态协议 sample，不保证包含全部在线玩家。
-
-### 文档
-
-| 方法 | 路径 | 权限 | 说明 |
-|---|---|---|---|
-| `GET` | `/documents/layer/:parentId` | 无 | 获取公开子节点 |
-| `GET` | `/documents/layer/private/:parentId` | 登录 | 获取包含私有节点的子节点 |
-| `GET` | `/documents/:id` | 无 | 获取公开文档内容 |
-| `GET` | `/documents/private/:id` | 登录 | 获取私有文档内容 |
-| `POST` | `/documents/node` | 登录 | 创建节点 |
-| `POST` | `/documents/node/:id` | 登录 | 更新节点父级 |
-| `PUT` | `/documents/node/:id` | 登录 | 更新文档内容 |
-| `PATCH` | `/documents/node/:id` | 登录 | 重命名/更新节点属性 |
-| `DELETE` | `/documents/node/:id` | 登录 | 删除节点 |
-| `POST` | `/documents/upload/:id` | 登录 | 上传文档附件 |
-| `DELETE` | `/documents/upload/:id` | 登录 | 删除文档附件 |
-
-### 静态资源
-
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| `GET` | `/contents/*` | 访问上传后的附件 |
-
-上传文件允许后缀：
-
-```text
-.png, .jpg, .jpeg, .webp, .pdf, .txt
-```
-
-文件会被重命名为 UUID 文件名。
-
-## Bot WebSocket
-
-### Token 管理
-
-| 方法 | 路径 | 权限 | 说明 |
-|---|---|---|---|
-| `POST` | `/bots/token` | `admin`/`bot_admin` | 创建 Bot Token |
-| `GET` | `/bots/token` | `admin`/`bot_admin` | 获取 Token 列表 |
-| `GET` | `/bots/token/:id` | `admin`/`bot_admin` | 获取 Token 记录 |
-| `DELETE` | `/bots/token/:id` | `admin`/`bot_admin` | 删除 Token |
-| `GET` | `/bots/status` | `admin`/`bot_admin` | 获取在线连接与日志 |
-| `DELETE` | `/bots/ws/kick/:session_id` | `admin`/`bot_admin` | 踢出指定连接 |
-
-创建 Token 请求：
-
-```json
-{
-  "name": "astrbot-main"
-}
-```
-
-建议响应包含明文 Token，并且明文只展示一次：
-
-```json
-{
-  "token": {
-    "name": "astrbot-main"
-  },
-  "plain_token": "bot_xxx"
-}
-```
-
-### WebSocket 连接
-
-推荐路由：
-
-```text
-GET /necore/bots/ws/updates/:identifier
-```
-
-请求头：
-
-```http
-Authorization: Bearer <bot-token>
-```
-
-`identifier` 是机器人连接标识，例如：
-
-```text
-astrbot-test
-```
-
-后端会为每个连接生成 `session_id`，管理端可通过该 ID 定向推送或踢出连接。
-
-### 心跳
-
-Bot 客户端应定期发送：
-
-```json
-{
-  "type": "heartbeat",
-  "identifier": "astrbot-test",
-  "time": 1710000000
-}
-```
-
-后端收到 `type=heartbeat` 或 `event=heartbeat` 后刷新最近心跳时间。超过 `BOT_HEARTBEAT_TIMEOUT_SECONDS` 未收到心跳，后端会主动断开连接并记录日志。
-
-### 推送事件
-
-文章更新事件：
-
-```json
-{
-  "event": "article_updated",
-  "data": {
-    "id": "article-id",
-    "title": "文章标题",
-    "brief": "文章简介",
-    "category": "information"
-  }
-}
-```
-
-## 安全注意事项
-
-- `SECRET` 必须保密，泄漏后应更换并让用户重新登录。
-- 用户密码使用 bcrypt 保存，不应记录明文密码。
-- Bot Token 应只保存 hash，创建时明文只返回一次。
-- WebSocket 中的 `identifier`、`token_name` 等动态字段写入 HTML 日志前必须进行转义。
-- 从 Fiber `Ctx` 取得并跨 WebSocket 生命周期使用的字符串应使用 `strings.Clone` 复制，避免请求上下文复用导致内容污染。
-- 文件上传必须使用安全文件名与后缀白名单。
-- 对自动重连造成的重复日志，应在 Hub 层进行去重。
+- 可点击元素使用 `button` 或提供明确的键盘交互。
+- 图标按钮提供 `aria-label`。
+- Dialog 使用明确标题，并保证确认/取消操作可通过键盘完成。
+- 动态状态变化使用 `aria-live` 提示。
+- 列表、表格、日志等区域使用合适的 `role`、`caption` 或 `aria-label`。
+- 服务器玩家头像支持 Tab 聚焦，并在聚焦时显示玩家名称。
 
 ## 部署建议
 
-### 直接运行
+### 同源部署
 
-```bash
-go build -o necore .
-./necore
+推荐使用同一域名部署前端和后端：
+
+```text
+https://example.com/          -> neco 静态资源
+https://example.com/necore/   -> necore API
 ```
 
-### systemd 示例
-
-```ini
-[Unit]
-Description=Necore Backend
-After=network.target
-
-[Service]
-WorkingDirectory=/opt/necore
-ExecStart=/opt/necore/necore
-Restart=always
-Environment=NECORE_CONFIG_FILE=/opt/necore/.env
-
-[Install]
-WantedBy=multi-user.target
-```
-
-### Nginx 反向代理
+Nginx 示例：
 
 ```nginx
+location / {
+    try_files $uri $uri/ /index.html;
+}
+
 location /necore/ {
     proxy_pass http://127.0.0.1:3000/necore/;
     proxy_set_header Host $host;
@@ -445,60 +242,47 @@ location /necore/bots/ws/ {
 }
 ```
 
+### 构建产物
+
+```bash
+npm run build
+```
+
+构建结果位于：
+
+```text
+dist/
+```
+
+## 开发注意事项
+
+- 新增 API 时优先在 `src/api/` 中封装，页面组件不要直接拼装 axios 请求。
+- 新增后台页面时同步修改 `src/router/index.ts` 和 `ManagementView.vue` 的导航入口。
+- 涉及权限展示时同步更新 `UserManagementView.vue` 中的权限名称映射与编辑开关。
+- 文件上传接口返回的 `/contents/...` 路径不一定包含 `/necore` 前缀，前端展示资源时需要统一处理。
+- 对后端返回的日志 HTML 片段必须做白名单清理，避免直接渲染不可信 HTML。
+
 ## 常用命令
 
 ```bash
-# 下载依赖
-go mod download
+# 安装依赖
+npm install
 
-# 开发运行
-go run .
+# 开发
+npm run dev
 
-# 测试
-go test ./...
+# 类型检查
+npm run type-check
 
 # 构建
-go build -o necore .
+npm run build
+
+# 预览
+npm run preview
+
+# 自动格式化
+npm run format
+
+# ESLint 修复
+npm run lint
 ```
-
-## 故障排查
-
-### 登录后很快失效
-
-检查 `.env` 中 `SECRET` 是否每次启动都变化。生产环境必须固定 `SECRET`。
-
-### 上传文件无法访问
-
-确认：
-
-- `contents/` 目录存在且进程有读写权限；
-- 前端访问路径是否补齐 `/necore` 前缀；
-- 反向代理是否转发 `/necore/contents/`。
-
-### Bot 一直重连
-
-检查：
-
-- WebSocket 路由是否为 `/necore/bots/ws/updates/:identifier`；
-- 请求头是否包含 `Authorization: Bearer <bot-token>`；
-- Token 是否被删除或重新生成；
-- 反向代理是否正确配置 `Upgrade` 和 `Connection`；
-- 心跳间隔是否小于 `BOT_HEARTBEAT_TIMEOUT_SECONDS`。
-
-### Bot 断开日志中的 identifier 异常变化
-
-确认 WebSocket 鉴权中间件中从 Fiber `Ctx` 取得的字符串已经使用 `strings.Clone` 复制，例如：
-
-```go
-identifier := strings.TrimSpace(strings.Clone(c.Params("identifier")))
-c.Locals("identifier", strings.Clone(identifier))
-```
-
-### 服务器状态查询返回离线
-
-确认：
-
-- `serverUrl` 格式是否正确，例如 `example.com:25565`；
-- 服务器是否允许 Minecraft status ping；
-- 后端所在机器能否访问目标服务器；
-- 查询并发过高时可能返回 `429 Service busy`。
