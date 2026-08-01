@@ -12,6 +12,13 @@ import (
 	"github.com/google/uuid"
 )
 
+func GetWikiTypes(c *fiber.Ctx) error {
+	return c.JSON(fiber.Map{
+		"glossaryTypes": model.GlossaryTypes,
+		"itemTypes":     model.ItemTypes,
+	})
+}
+
 func checkWikiPermission(c *fiber.Ctx) bool {
 	user := c.Locals("currentUser").(model.User)
 	isAdmin := dao.ContainsGroup(user.Group, "admin")

@@ -2,6 +2,8 @@ package model
 
 import "gorm.io/gorm"
 
+var GlossaryTypes = []string{"服务器", "社群", "概念", "地理", "人物", "其它"}
+
 type Glossary struct {
 	gorm.Model
 
