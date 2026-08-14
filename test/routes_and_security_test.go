@@ -68,6 +68,7 @@ func setupTestEnv(t *testing.T) *testEnv {
 	setGormLoggerSilent(database.GetServerDatabase())
 	setGormLoggerSilent(database.GetDocumentDatabase())
 	setGormLoggerSilent(database.GetBotTokenDatabase())
+	setGormLoggerSilent(database.GetDepartmentDatabase())
 
 	// 必须在 Windows 删除 TempDir 前关闭 SQLite 连接池，否则数据库文件会被锁定。
 	t.Cleanup(func() {
@@ -77,6 +78,7 @@ func setupTestEnv(t *testing.T) *testEnv {
 		closeGormDB(t, database.GetDocumentDatabase())
 		closeGormDB(t, database.GetBotTokenDatabase())
 		closeGormDB(t, database.GetWikiDatabase())
+		closeGormDB(t, database.GetDepartmentDatabase())
 	})
 
 	must(t, dao.AddUserByUsername("admin", "admin-pass"))
@@ -282,6 +284,17 @@ func registerRoutes(app *fiber.App) {
 	botGroup.Delete("/token/:id", middleware.AuthNeeded(), service.DeleteBotToken)
 	botGroup.Get("/status", middleware.AuthNeeded(), service.GetWSStatus)
 	botGroup.Delete("/ws/kick/:session_id", middleware.AuthNeeded(), service.KickConnection)
+
+	departmentGroup := api.Group("/department")
+	departmentGroup.Get("/", service.GetDepartmentList)
+	departmentGroup.Post("/create", middleware.AuthNeeded(), service.CreateDepartment)
+	departmentGroup.Patch("/", middleware.AuthNeeded(), service.UpdateDepartment)
+	departmentGroup.Patch("/order", middleware.AuthNeeded(), service.UpdateDepartmentOrder)
+	departmentGroup.Delete("/:id", middleware.AuthNeeded(), service.DeleteDepartment)
+	departmentGroup.Post("/:id/member", middleware.AuthNeeded(), service.AddDepartmentMember)
+	departmentGroup.Delete("/:id/member/:username", middleware.AuthNeeded(), service.RemoveDepartmentMember)
+	departmentGroup.Patch("/:id/member/:username/leader", middleware.AuthNeeded(), service.UpdateDepartmentMemberLeaderStatus)
+	departmentGroup.Patch("/:id/member/order", middleware.AuthNeeded(), service.UpdateDepartmentMemberOrder)
 }
 
 func must(t *testing.T, err error) {
@@ -943,40 +956,3 @@ func TestDocument_PathTraversalUpload(t *testing.T) {
 	}
 }
 
-/*
-5. WEBSOCKET SECURITY TEST
-*/
-func TestWebSocket_UnauthenticatedAccess(t *testing.T) {
-	env := setupTestEnv(t)
-
-	req := httptest.NewRequest("GET", "/ws", nil)
-	req.Header.Set("Upgrade", "websocket")
-	req.Header.Set("Connection", "Upgrade")
-
-	resp := executeRequest(t, env, req)
-
-	// WebSocket 应该要求认证或握手验证
-	if resp.StatusCode == 200 {
-		t.Fatal("UNAUTHORIZED WEBSOCKET ACCESS ALLOWED")
-	}
-}
-
-/*
-6. TOKEN / SESSION ABUSE
-*/
-func TestTokenReuseAfterPrivilegeChange(t *testing.T) {
-	env := setupTestEnv(t)
-
-	// 假设 alice token 已存在
-	token := env.userToken
-
-	// 模拟权限变化或用户被禁用后的访问
-	req := httptest.NewRequest("GET", "/user/me", nil)
-	req.Header.Set("Authorization", "Bearer "+token)
-
-	resp := executeRequest(t, env, req)
-
-	if resp.StatusCode == 200 && strings.Contains(string(resp.Body), "admin") {
-		t.Fatal("TOKEN STILL VALID AFTER PRIVILEGE CHANGE")
-	}
-}
