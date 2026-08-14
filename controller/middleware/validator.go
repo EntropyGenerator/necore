@@ -14,24 +14,38 @@ import (
 )
 
 func validateTokenVersion(c *fiber.Ctx) error {
+	if !resolveCurrentUser(c) {
+		return nil
+	}
+	return c.Next()
+}
+
+// resolveCurrentUser validates the JWT claims against the stored user and
+// token version, then stores the user in c.Locals("currentUser").
+// On failure it writes the 401/500 response and returns false.
+func resolveCurrentUser(c *fiber.Ctx) bool {
 	token, ok := c.Locals("user").(*jwt.Token)
 	if !ok || token == nil {
-		return invalidToken(c)
+		invalidToken(c)
+		return false
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return invalidToken(c)
+		invalidToken(c)
+		return false
 	}
 
 	username, ok := claims["name"].(string)
 	if !ok || username == "" {
-		return invalidToken(c)
+		invalidToken(c)
+		return false
 	}
 
 	tokenVersion, ok := getUintClaim(claims, "ver")
 	if !ok {
-		return invalidToken(c)
+		invalidToken(c)
+		return false
 	}
 
 	var user model.User
@@ -41,23 +55,26 @@ func validateTokenVersion(c *fiber.Ctx) error {
 		First(&user).Error
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return invalidToken(c)
+		invalidToken(c)
+		return false
 	}
 
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Internal server error",
 		})
+		return false
 	}
 
 	if tokenVersion != user.TokenVersion {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+		c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Token has been revoked",
 		})
+		return false
 	}
 
 	c.Locals("currentUser", user)
-	return c.Next()
+	return true
 }
 
 func getUintClaim(claims jwt.MapClaims, key string) (uint, bool) {

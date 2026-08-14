@@ -19,10 +19,27 @@ contents/*
 # Build
 
 necore
+necore-server
+*.exe
+
+# Test artifacts
+
+*.test
+*.test.exe
+coverage.out
 
 # dotenv
+
 .env
 .env.*
 !.env.example
 
 .idea/
+
+# build/test artifacts
+
+.gotmp/
+
+# OS junk
+
+.DS_Store

@@ -242,6 +242,9 @@ func UploadWikiFile(c *fiber.Ctx) error {
 			"error": err.Error(),
 		})
 	}
+	if file.Size > MaxUploadSize {
+		return rejectOversizedUpload(c)
+	}
 	dir := fmt.Sprintf("./contents/wiki/%s", id)
 	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})

@@ -204,6 +204,9 @@ func HandleWSConnection(c *websocket.Conn) {
 }
 
 func GetWSStatus(c *fiber.Ctx) error {
+	if checkBotTokenPermission(c) {
+		return c.SendStatus(fiber.StatusForbidden)
+	}
 	clients, logs := ws.GlobalHub.GetDashboardStats()
 	return c.JSON(fiber.Map{
 		"online_count": len(clients),

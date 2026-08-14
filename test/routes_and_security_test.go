@@ -1,4 +1,4 @@
-package main
+package necore_test
 
 import (
 	"bytes"
@@ -76,6 +76,7 @@ func setupTestEnv(t *testing.T) *testEnv {
 		closeGormDB(t, database.GetServerDatabase())
 		closeGormDB(t, database.GetDocumentDatabase())
 		closeGormDB(t, database.GetBotTokenDatabase())
+		closeGormDB(t, database.GetWikiDatabase())
 	})
 
 	must(t, dao.AddUserByUsername("admin", "admin-pass"))
@@ -252,7 +253,7 @@ func registerRoutes(app *fiber.App) {
 	serverGroup := api.Group("/server")
 	serverGroup.Get("/", service.GetServerList)
 	serverGroup.Post("/status", service.GetServerStatus)
-	serverGroup.Get("/create", middleware.AuthNeeded(), service.AddServer)
+	serverGroup.Post("/create", middleware.AuthNeeded(), service.AddServer)
 	serverGroup.Delete("/:id", middleware.AuthNeeded(), service.DeleteServer)
 	serverGroup.Patch("/", middleware.AuthNeeded(), service.UpdateServer)
 
@@ -268,7 +269,7 @@ func registerRoutes(app *fiber.App) {
 	documentGroup.Get("/:id", service.GetDocumentNodeContent)
 	documentGroup.Post("/upload/:id", middleware.AuthNeeded(), service.UploadDocumentFile)
 	documentGroup.Delete("/upload/:id", middleware.AuthNeeded(), service.DeleteDocumentFile)
-	api.Static("/contents", "./contents")
+	api.Get("/contents/:id/*", service.ContentFileHandler)
 
 	botGroup := api.Group("/bots")
 
@@ -504,9 +505,9 @@ func TestServerRoutes(t *testing.T) {
 
 	assertStatus(t, doJSON(t, env, http.MethodGet, "/necore/server/", "", nil), http.StatusOK)
 	assertStatus(t, doRaw(t, env, http.MethodPost, "/necore/server/status", "", "application/json", "{"), http.StatusBadRequest)
-	assertStatus(t, doJSON(t, env, http.MethodGet, "/necore/server/create", env.userToken, nil), http.StatusForbidden)
+	assertStatus(t, doJSON(t, env, http.MethodPost, "/necore/server/create", env.userToken, nil), http.StatusForbidden)
 
-	createResp := doJSON(t, env, http.MethodGet, "/necore/server/create", env.adminToken, nil)
+	createResp := doJSON(t, env, http.MethodPost, "/necore/server/create", env.adminToken, nil)
 	assertStatus(t, createResp, http.StatusOK)
 	serverID, _ := decodeBody(t, createResp)["id"].(string)
 	if serverID == "" {
@@ -621,8 +622,8 @@ func TestBotRoutes(t *testing.T) {
 	assertStatus(t, doJSON(t, env, http.MethodGet, "/necore/bots/token", env.adminToken, nil), http.StatusOK)
 	assertStatus(t, doJSON(t, env, http.MethodGet, "/necore/bots/token/missing", env.adminToken, nil), http.StatusNotFound)
 
-	// 当前源码只要求“已登录”，没有 bot_admin 权限检查。
-	assertStatus(t, doJSON(t, env, http.MethodGet, "/necore/bots/status", env.userToken, nil), http.StatusOK)
+	// 状态面板与踢出都要求 bot_admin。
+	assertStatus(t, doJSON(t, env, http.MethodGet, "/necore/bots/status", env.userToken, nil), http.StatusForbidden)
 	assertStatus(t, doJSON(t, env, http.MethodDelete, "/necore/bots/ws/kick/not-exist", env.userToken, nil), http.StatusForbidden)
 	assertStatus(t, doJSON(t, env, http.MethodDelete, "/necore/bots/token/missing", env.adminToken, nil), http.StatusInternalServerError)
 }
@@ -643,23 +644,20 @@ func TestSecurityRegression_FileDeletePathTraversalIsCurrentlyPossible(t *testin
 	}
 }
 
-func TestSecurityRegression_BotDashboardAvailableToAnyAuthenticatedUser(t *testing.T) {
+func TestSecurityRegression_BotDashboardRequiresBotAdmin(t *testing.T) {
 	env := setupTestEnv(t)
 
-	// 该测试记录当前安全缺陷：普通登录用户也能查看 bot 状态并调用 kick。
-	assertStatus(t, doJSON(t, env, http.MethodGet, "/necore/bots/status", env.userToken, nil), http.StatusOK)
+	// 普通登录用户不能查看 bot 状态，也不能踢出连接。
+	assertStatus(t, doJSON(t, env, http.MethodGet, "/necore/bots/status", env.userToken, nil), http.StatusForbidden)
 	assertStatus(t, doJSON(t, env, http.MethodDelete, "/necore/bots/ws/kick/arbitrary-session", env.userToken, nil), http.StatusForbidden)
 }
 
-func TestSecurityRegression_PrivateUserDataIsPubliclyEnumerable(t *testing.T) {
+func TestSecurityRegression_UserListRequiresAdmin(t *testing.T) {
 	env := setupTestEnv(t)
 
-	resp := doJSON(t, env, http.MethodGet, "/necore/auth/userlist", env.userToken, nil)
-	assertStatus(t, resp, http.StatusOK)
-
-	if !strings.Contains(string(resp.Body), "admin") || !strings.Contains(string(resp.Body), "alice") {
-		t.Fatalf("expected public user list to expose usernames, body=%s", string(resp.Body))
-	}
+	// 用户列表暴露全部用户名/权限/标签，仅 admin 可查。
+	assertStatus(t, doJSON(t, env, http.MethodGet, "/necore/auth/userlist", env.userToken, nil), http.StatusForbidden)
+	assertStatus(t, doJSON(t, env, http.MethodGet, "/necore/auth/userlist", env.adminToken, nil), http.StatusOK)
 }
 
 func TestTokenVersion_StaleTokenRejectedAcrossProtectedRouteGroups(t *testing.T) {
@@ -698,7 +696,7 @@ func TestTokenVersion_StaleTokenRejectedAcrossProtectedRouteGroups(t *testing.T)
 		},
 		{
 			name:   "server create",
-			method: http.MethodGet,
+			method: http.MethodPost,
 			path:   "/necore/server/create",
 		},
 		{

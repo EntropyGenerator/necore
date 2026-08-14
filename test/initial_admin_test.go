@@ -1,4 +1,4 @@
-package main
+package necore_test
 
 import (
 	"bytes"
@@ -50,6 +50,7 @@ func setupEmptyUserEnv(t *testing.T) string {
 		closeGormDB(t, database.GetServerDatabase())
 		closeGormDB(t, database.GetDocumentDatabase())
 		closeGormDB(t, database.GetBotTokenDatabase())
+		closeGormDB(t, database.GetWikiDatabase())
 	})
 
 	return tmpDir

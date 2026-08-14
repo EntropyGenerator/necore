@@ -76,6 +76,33 @@ func GetServerStatus(c *fiber.Ctx) error {
 			"error": err.Error(),
 		})
 	}
+
+	// SSRF 防护：只允许查询服务器列表中已配置的地址，拒绝任意的内网/外部目标。
+	req.ServerUrl = strings.TrimSpace(req.ServerUrl)
+	if req.ServerUrl == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid server address",
+		})
+	}
+	servers, err := dao.GetServerList()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Internal server error",
+		})
+	}
+	allowed := false
+	for _, server := range servers {
+		if strings.TrimSpace(server.ServerUrl) == req.ServerUrl {
+			allowed = true
+			break
+		}
+	}
+	if !allowed {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid server address",
+		})
+	}
+
 	type Player struct {
 		Name string `json:"name"`
 		UUID string `json:"uuid"`

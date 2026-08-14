@@ -160,7 +160,9 @@ func (h *Hub) Unregister(sessionID, reason string, unexpected bool) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if client, ok := h.Clients[sessionID]; ok {
-		client.Conn.Close()
+		if client.Conn != nil {
+			client.Conn.Close()
+		}
 		delete(h.Clients, sessionID)
 		if unexpected {
 			h.AddLog(
@@ -209,6 +211,9 @@ func (h *Hub) Broadcast(message interface{}) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	for _, client := range h.Clients {
+		if client.Conn == nil {
+			continue
+		}
 		_ = client.Conn.WriteJSON(message)
 	}
 }
@@ -230,6 +235,9 @@ func (h *Hub) BroadcastToSessions(message interface{}, sessionIDs []string) int 
 
 	for sessionID, client := range h.Clients {
 		if !targets[sessionID] {
+			continue
+		}
+		if client.Conn == nil {
 			continue
 		}
 
