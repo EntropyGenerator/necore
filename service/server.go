@@ -3,6 +3,7 @@ package service
 import (
 	"necore/dao"
 	"necore/model"
+	"necore/ws"
 	"strconv"
 	"strings"
 	"time"
@@ -187,6 +188,14 @@ func AddServer(c *fiber.Ctx) error {
 			"error": err.Error(),
 		})
 	}
+	ws.GlobalHub.Broadcast(fiber.Map{
+		"event": "server_updated",
+		"data": fiber.Map{
+			"id":     id,
+			"action": "create",
+			"name":   server.Name,
+		},
+	})
 	return c.JSON(fiber.Map{
 		"id": id,
 	})
@@ -203,6 +212,13 @@ func DeleteServer(c *fiber.Ctx) error {
 			"error": err.Error(),
 		})
 	}
+	ws.GlobalHub.Broadcast(fiber.Map{
+		"event": "server_updated",
+		"data": fiber.Map{
+			"id":     c.Params("id"),
+			"action": "delete",
+		},
+	})
 	return c.SendStatus(fiber.StatusOK)
 }
 
@@ -223,5 +239,14 @@ func UpdateServer(c *fiber.Ctx) error {
 			"error": err.Error(),
 		})
 	}
+	ws.GlobalHub.Broadcast(fiber.Map{
+		"event": "server_updated",
+		"data": fiber.Map{
+			"id":          server.Id,
+			"action":      "update",
+			"name":        server.Name,
+			"description": server.Description,
+		},
+	})
 	return c.SendStatus(fiber.StatusOK)
 }

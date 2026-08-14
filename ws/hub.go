@@ -52,6 +52,17 @@ type Client struct {
 	LastHeartbeat     string          `json:"last_heartbeat"`
 	LastHeartbeatUnix int64           `json:"-"`
 	Conn              *websocket.Conn `json:"-"`
+	sendMu            sync.Mutex      `json:"-"`
+}
+
+// SendJSON 串行化写操作：服务端保活 ping 与 hub 广播可能并发写同一连接。
+func (c *Client) SendJSON(message interface{}) error {
+	if c == nil || c.Conn == nil {
+		return nil
+	}
+	c.sendMu.Lock()
+	defer c.sendMu.Unlock()
+	return c.Conn.WriteJSON(message)
 }
 
 func (c *Client) TouchHeartbeat() {
@@ -211,10 +222,7 @@ func (h *Hub) Broadcast(message interface{}) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	for _, client := range h.Clients {
-		if client.Conn == nil {
-			continue
-		}
-		_ = client.Conn.WriteJSON(message)
+		_ = client.SendJSON(message)
 	}
 }
 
@@ -237,11 +245,8 @@ func (h *Hub) BroadcastToSessions(message interface{}, sessionIDs []string) int 
 		if !targets[sessionID] {
 			continue
 		}
-		if client.Conn == nil {
-			continue
-		}
 
-		if err := client.Conn.WriteJSON(message); err == nil {
+		if err := client.SendJSON(message); err == nil {
 			sent++
 		}
 	}
@@ -257,16 +262,20 @@ func safeClientForDashboard(c *Client) *Client {
 		return nil
 	}
 
-	copied := *c
-	copied.Identifier = escapeLogText(copied.Identifier)
-	copied.TokenName = escapeLogText(copied.TokenName)
+	copied := &Client{
+		SessionID:  c.SessionID,
+		Identifier: escapeLogText(c.Identifier),
+		TokenID:    c.TokenID,
+		TokenName:  escapeLogText(c.TokenName),
+		Connected:  c.Connected,
+	}
 
 	last := atomic.LoadInt64(&c.LastHeartbeatUnix)
 	if last > 0 {
 		copied.LastHeartbeat = time.Unix(last, 0).Format("2006-01-02 15:04:05")
 	}
 
-	return &copied
+	return copied
 }
 
 func (h *Hub) GetDashboardStats() ([]*Client, []string) {
