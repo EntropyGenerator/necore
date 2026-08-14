@@ -92,6 +92,7 @@ func SetupRoutes() {
 	serverGroup.Use(globalLimiter)
 	serverGroup.Get("/", service.GetServerList)
 	serverGroup.Post("/status", service.GetServerStatus)
+	serverGroup.Get("/skin/:name", service.GetPlayerSkin)
 	serverGroup.Post("/create", middleware.AuthNeeded(), service.AddServer)
 	serverGroup.Delete("/:id", middleware.AuthNeeded(), service.DeleteServer)
 	serverGroup.Patch("/", middleware.AuthNeeded(), service.UpdateServer)
