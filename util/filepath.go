@@ -34,9 +34,19 @@ func SafeContentPath(root, objectID, filename string) (string, error) {
 		return "", err
 	}
 
+	rootAbs, err := filepath.Abs(root)
+	if err != nil {
+		return "", err
+	}
+
 	baseDir, err := filepath.Abs(filepath.Join(root, objectID))
 	if err != nil {
 		return "", err
+	}
+
+	// objectID 本身（如 ".."）不能逃逸出 root 目录
+	if baseDir != rootAbs && !strings.HasPrefix(baseDir, rootAbs+string(filepath.Separator)) {
+		return "", ErrInvalidFilename
 	}
 
 	target, err := filepath.Abs(filepath.Join(baseDir, safeName))

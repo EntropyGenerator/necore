@@ -30,12 +30,12 @@ func UpdateItem(entry model.Item) error {
 		Model(&model.Item{}).
 		Where("id = ?", entry.Id).
 		Updates(map[string]any{
-			"name":     entry.Name,
-			"type":     entry.Type,
-			"image":    entry.Image,
+			"name":      entry.Name,
+			"type":      entry.Type,
+			"image":     entry.Image,
 			"max_stack": entry.MaxStack,
-			"recipe":   entry.Recipe,
-			"content":  entry.Content,
+			"recipe":    entry.Recipe,
+			"content":   entry.Content,
 		})
 
 	if result.Error != nil {

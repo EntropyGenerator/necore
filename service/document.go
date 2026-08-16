@@ -11,6 +11,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 func checkDocumentPermission(c *fiber.Ctx) bool {
@@ -67,6 +68,11 @@ func DeleteDocumentNode(c *fiber.Ctx) error {
 
 	id := c.Params("id")
 	if err := dao.DeleteDocumentNode(id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "Document not found",
+			})
+		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
@@ -234,9 +240,8 @@ func GetDocumentNodeChildrenPrivate(c *fiber.Ctx) error {
 		marshalledNodeList[i] = marshalDocNode(&node)
 	}
 	if err != nil {
-		return c.JSON(fiber.Map{
-			"error":    err.Error(),
-			"children": marshalledNodeList,
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
 		})
 	}
 	return c.JSON(fiber.Map{
@@ -254,9 +259,8 @@ func GetDocumentNodeChildren(c *fiber.Ctx) error {
 	}
 
 	if err != nil {
-		return c.JSON(fiber.Map{
-			"error":    err.Error(),
-			"children": marshalledNodeList,
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
 		})
 	}
 	return c.JSON(fiber.Map{
@@ -273,6 +277,11 @@ func GetDocumentNodeContentPrivate(c *fiber.Ctx) error {
 	id := c.Params("id")
 	node, err := dao.GetDocumentContent(id, true)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "Document not found",
+			})
+		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
@@ -284,6 +293,11 @@ func GetDocumentNodeContent(c *fiber.Ctx) error {
 	id := c.Params("id")
 	node, err := dao.GetDocumentContent(id, false)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "Document not found",
+			})
+		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
@@ -303,6 +317,9 @@ func UploadDocumentFile(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
+	}
+	if file.Size > MaxUploadSize {
+		return rejectOversizedUpload(c)
 	}
 	if err := os.MkdirAll(fmt.Sprintf("./contents/%s", id), 0o750); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})

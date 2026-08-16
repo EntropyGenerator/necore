@@ -14,6 +14,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 func generateStoredFilename(original string) (string, error) {
@@ -146,6 +147,9 @@ func GetArticleById(c *fiber.Ctx) error {
 
 	article, err := dao.GetArticle(id)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Article not found"})
+		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 	type PayloadEntity struct {
@@ -206,6 +210,17 @@ func GetArticleList(c *fiber.Ctx) error {
 	if err := c.BodyParser(payload); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
+	// 分页参数约束：page 从 1 开始，page_size 限制在 1..100，
+	// 避免负数/零值导致 SQL 偏移错误或超大查询。
+	if payload.Page < 1 {
+		payload.Page = 1
+	}
+	if payload.PageSize < 1 {
+		payload.PageSize = 10
+	}
+	if payload.PageSize > 100 {
+		payload.PageSize = 100
+	}
 	articles, err := dao.GetArticleList(payload.Target, payload.Page, payload.PageSize, payload.Pin)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
@@ -243,6 +258,9 @@ func UploadArticleFile(c *fiber.Ctx) error {
 	file, err := c.FormFile("file")
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+	if file.Size > MaxUploadSize {
+		return rejectOversizedUpload(c)
 	}
 	if err := os.MkdirAll(fmt.Sprintf("./contents/%s", id), 0o750); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})

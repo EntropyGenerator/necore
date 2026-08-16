@@ -73,6 +73,41 @@ func getCurrentTime() string {
 	return newtime
 }
 
+// hasPrivateAncestor reports whether node itself or any of its ancestors is
+// marked private. A private node hides its whole subtree: children of a
+// private folder must not be exposed through public routes.
+func hasPrivateAncestor(db *gorm.DB, node *model.DocumentNode) (bool, error) {
+	if node.Private {
+		return true, nil
+	}
+	seen := map[string]struct{}{node.Id: {}}
+	current := *node
+	for current.ParentId != "" && current.ParentId != "root" {
+		if _, visited := seen[current.ParentId]; visited {
+			// 数据损坏导致祖先链成环：按"无私有祖先"处理，避免无限循环
+			return false, nil
+		}
+		seen[current.ParentId] = struct{}{}
+
+		var parent model.DocumentNode
+		err := db.Select("id", "parent_id", "private").
+			Where("id = ?", current.ParentId).
+			First(&parent).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// broken parent chain: nothing above hides the node
+			return false, nil
+		}
+		if err != nil {
+			return false, err
+		}
+		if parent.Private {
+			return true, nil
+		}
+		current = parent
+	}
+	return false, nil
+}
+
 func CreateDocumentNode(parentId string, isFolder bool, private bool, name string, id string, username string) error {
 	db := database.GetDocumentDatabase()
 
@@ -105,7 +140,7 @@ func DeleteDocumentNode(id string) error {
 	}
 
 	if len(ids) == 0 {
-		return fmt.Errorf("No document nodes found")
+		return gorm.ErrRecordNotFound
 	}
 
 	if err := db.Transaction(func(tx *gorm.DB) error {
@@ -131,7 +166,7 @@ func collectDocumentNodeIDs(db *gorm.DB, id string, ids *[]string) error {
 	var node model.DocumentNode
 	err := db.Where("id = ?", id).First(&node).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return fmt.Errorf("Record not found")
+		return gorm.ErrRecordNotFound
 	}
 	if err != nil {
 		return err
@@ -251,7 +286,20 @@ func GetDocumentNodeChildren(id string, private bool) ([]model.DocumentNode, err
 		// all
 		err = db.Where(&model.DocumentNode{ParentId: id}).Find(&nodes).Error
 	} else {
-		// public only
+		// public only: a private parent (or private ancestor) hides its children
+		var parent model.DocumentNode
+		perr := db.Select("id", "parent_id", "private").
+			Where("id = ?", id).
+			First(&parent).Error
+		if perr == nil {
+			hidden, herr := hasPrivateAncestor(db, &parent)
+			if herr != nil {
+				return nil, herr
+			}
+			if hidden {
+				return []model.DocumentNode{}, nil
+			}
+		}
 		err = db.Where(map[string]interface{}{"parent_id": id, "private": false}).Find(&nodes).Error
 	}
 	if err != nil {
@@ -259,6 +307,28 @@ func GetDocumentNodeChildren(id string, private bool) ([]model.DocumentNode, err
 		return nodes, err
 	}
 	return nodes, nil
+}
+
+// IsDocumentNodeEffectivelyPrivate reports whether the node (or any of its
+// ancestors) is marked private. Used by the /contents file guard: files
+// uploaded for a private node must not be served anonymously.
+func IsDocumentNodeEffectivelyPrivate(id string) (bool, error) {
+	db := database.GetDocumentDatabase()
+	var node model.DocumentNode
+	// LOWER 大小写不敏感匹配：Windows/NTFS 文件系统大小写不敏感，
+	// 若按大小写敏感查找，URL 中大小写变体的 UUID 会查不到节点而被误判为公开，
+	// 但 SendFile 仍能按不敏感路径命中文件，造成 private 文件越权。
+	err := db.Select("id", "parent_id", "private").
+		Where("LOWER(id) = LOWER(?)", id).
+		First(&node).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		// not a document node — treat as public (article/wiki/server files)
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return hasPrivateAncestor(db, &node)
 }
 
 func GetDocumentContent(id string, private bool) (model.DocumentNode, error) {
@@ -269,8 +339,17 @@ func GetDocumentContent(id string, private bool) (model.DocumentNode, error) {
 		// all
 		err = db.Where(&model.DocumentNode{Id: id}).First(&node).Error
 	} else {
-		// public only
+		// public only: node itself public and no private ancestor
 		err = db.Where(map[string]interface{}{"id": id, "private": false}).First(&node).Error
+		if err == nil {
+			hidden, herr := hasPrivateAncestor(db, &node)
+			if herr != nil {
+				return model.DocumentNode{}, herr
+			}
+			if hidden {
+				return model.DocumentNode{}, gorm.ErrRecordNotFound
+			}
+		}
 	}
 	if err != nil {
 		return model.DocumentNode{}, err

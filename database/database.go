@@ -19,6 +19,8 @@ var documentDatabase *gorm.DB
 
 var botTokenDatabase *gorm.DB
 
+var departmentDatabase *gorm.DB
+
 var wikiDatabase *gorm.DB
 
 func ConnectSqlite() {
@@ -61,6 +63,12 @@ func ConnectSqlite() {
 
 	var count int64
 	wikiDatabase.Model(&model.WikiTag{}).Count(&count)
+
+	departmentDatabase, err = gorm.Open(sqlite.Open("data/department.sqlite3"), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect department database")
+	}
+	departmentDatabase.AutoMigrate(&model.Department{}, &model.DepartmentMember{})
 }
 
 func GetUserDatabase() *gorm.DB {
@@ -81,6 +89,10 @@ func GetDocumentDatabase() *gorm.DB {
 
 func GetBotTokenDatabase() *gorm.DB {
 	return botTokenDatabase
+}
+
+func GetDepartmentDatabase() *gorm.DB {
+	return departmentDatabase
 }
 
 func GetWikiDatabase() *gorm.DB {

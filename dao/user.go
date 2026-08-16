@@ -246,7 +246,7 @@ func AddAdminUser(username string, password string) error {
 		return err
 	}
 
-db := database.GetUserDatabase()
+	db := database.GetUserDatabase()
 
 	// Use Limit(1).Find rather than First. Find returns no error when zero
 	// rows match, so GORM does not log "record not found" at startup and the
@@ -283,7 +283,7 @@ db := database.GetUserDatabase()
 
 	user := model.User{
 		Username:     username,
-		Password:    hash,
+		Password:     hash,
 		Group:        `["admin"]`,
 		Tags:         `[]`,
 		Avatar:       "",
