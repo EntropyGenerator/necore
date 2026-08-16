@@ -2,6 +2,7 @@ package necore_test
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
@@ -113,4 +114,27 @@ func TestDepartment_PermissionsAndNotFound(t *testing.T) {
 	assertStatus(t, doJSON(t, env, http.MethodDelete, "/necore/department/missing-id", env.adminToken, nil), http.StatusNotFound)
 	// 创建部门名称为空 → 400
 	assertStatus(t, doJSON(t, env, http.MethodPost, "/necore/department/create", env.adminToken, fiber.Map{"name": "  "}), http.StatusBadRequest)
+}
+
+// 重复添加成员应返回 409；公开部门列表不应暴露权限组字段。
+func TestDepartment_MemberDuplicateAndGroupOmission(t *testing.T) {
+	env := setupTestEnv(t)
+
+	createResp := doJSON(t, env, http.MethodPost, "/necore/department/create", env.adminToken, fiber.Map{"name": "D"})
+	deptID, _ := decodeBody(t, createResp)["id"].(string)
+
+	assertStatus(t, doJSON(t, env, http.MethodPost, "/necore/department/"+deptID+"/member", env.adminToken, fiber.Map{
+		"username": "alice",
+	}), http.StatusOK)
+
+	// 重复添加 → 409
+	assertStatus(t, doJSON(t, env, http.MethodPost, "/necore/department/"+deptID+"/member", env.adminToken, fiber.Map{
+		"username": "alice",
+	}), http.StatusConflict)
+
+	// 公开列表不暴露 group 字段（匿名可读）
+	listResp := doJSON(t, env, http.MethodGet, "/necore/department/", "", nil)
+	if strings.Contains(string(listResp.Body), "\"group\"") {
+		t.Fatalf("public department list must not expose group, body=%s", string(listResp.Body))
+	}
 }

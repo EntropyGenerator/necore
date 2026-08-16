@@ -27,16 +27,13 @@ func CreateDepartment(department model.Department) error {
 	return database.GetDepartmentDatabase().Create(&department).Error
 }
 
-func UpdateDepartment(department model.Department) error {
+// UpdateDepartment 只更新 fields 中出现的字段；未出现的字段保持不变，
+// 支持前端按需 PATCH（省略字段不会被清零）。
+func UpdateDepartment(id string, fields map[string]any) error {
 	result := database.GetDepartmentDatabase().
 		Model(&model.Department{}).
-		Where("id = ?", department.Id).
-		Updates(map[string]any{
-			"name":        department.Name,
-			"description": department.Description,
-			"icon":        department.Icon,
-			"sort_order":  department.SortOrder,
-		})
+		Where("id = ?", id).
+		Updates(fields)
 
 	if result.Error != nil {
 		return result.Error
@@ -89,6 +86,19 @@ func GetDepartmentMembers(departmentID string) ([]model.DepartmentMember, error)
 		Order("sort_order asc, username asc").
 		Find(&members).Error
 	return members, err
+}
+
+// DepartmentMemberExists 判断成员是否已在该部门（重复添加应返回 409）。
+func DepartmentMemberExists(departmentID, username string) (bool, error) {
+	var count int64
+	err := database.GetDepartmentDatabase().
+		Model(&model.DepartmentMember{}).
+		Where("department_id = ? AND username = ?", departmentID, username).
+		Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
 
 func AddDepartmentMember(member model.DepartmentMember) error {

@@ -80,8 +80,15 @@ func hasPrivateAncestor(db *gorm.DB, node *model.DocumentNode) (bool, error) {
 	if node.Private {
 		return true, nil
 	}
+	seen := map[string]struct{}{node.Id: {}}
 	current := *node
 	for current.ParentId != "" && current.ParentId != "root" {
+		if _, visited := seen[current.ParentId]; visited {
+			// 数据损坏导致祖先链成环：按"无私有祖先"处理，避免无限循环
+			return false, nil
+		}
+		seen[current.ParentId] = struct{}{}
+
 		var parent model.DocumentNode
 		err := db.Select("id", "parent_id", "private").
 			Where("id = ?", current.ParentId).
@@ -308,8 +315,11 @@ func GetDocumentNodeChildren(id string, private bool) ([]model.DocumentNode, err
 func IsDocumentNodeEffectivelyPrivate(id string) (bool, error) {
 	db := database.GetDocumentDatabase()
 	var node model.DocumentNode
+	// LOWER 大小写不敏感匹配：Windows/NTFS 文件系统大小写不敏感，
+	// 若按大小写敏感查找，URL 中大小写变体的 UUID 会查不到节点而被误判为公开，
+	// 但 SendFile 仍能按不敏感路径命中文件，造成 private 文件越权。
 	err := db.Select("id", "parent_id", "private").
-		Where("id = ?", id).
+		Where("LOWER(id) = LOWER(?)", id).
 		First(&node).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		// not a document node — treat as public (article/wiki/server files)

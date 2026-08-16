@@ -956,4 +956,3 @@ func TestDocument_PathTraversalUpload(t *testing.T) {
 		t.Fatal("PATH TRAVERSAL POSSIBLE IN FILE UPLOAD")
 	}
 }
-

@@ -19,20 +19,16 @@ type routerInstance struct {
 
 var instance *routerInstance
 
-func init() {
-	app := app.GetInstance()
-	api := app.App.Group("/necore")
-
-	instance = &routerInstance{
-		Router: &api,
-	}
-}
-
 func GetInstance() *routerInstance {
 	return instance
 }
 
 func SetupRoutes() {
+	appInstance := app.GetInstance()
+	api := appInstance.App.Group("/necore")
+	instance = &routerInstance{
+		Router: &api,
+	}
 	loginLimiter := limiter.New(limiter.Config{
 		Max:        8,
 		Expiration: time.Minute,

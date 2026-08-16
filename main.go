@@ -17,6 +17,8 @@ func main() {
 		log.Fatalf("initialize configuration: %v", err)
 	}
 
+	app.Initialize()
+
 	database.ConnectSqlite()
 
 	if err := dao.EnsureInitialAdmin(); err != nil {

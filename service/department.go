@@ -24,7 +24,7 @@ type departmentTagEntity struct {
 type departmentMemberEntity struct {
 	Username string                `json:"username"`
 	Avatar   string                `json:"avatar,omitempty"`
-	Group    []string              `json:"group"`
+	Group    []string              `json:"-"` // 权限组不对外暴露（公开部门列表）
 	Tags     []departmentTagEntity `json:"tags"`
 	IsLeader bool                  `json:"isLeader"`
 }
@@ -33,7 +33,6 @@ type departmentMemberSortable struct {
 	Member    departmentMemberEntity
 	SortOrder int
 }
-
 
 func departmentNotFound(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -198,24 +197,53 @@ func UpdateDepartment(c *fiber.Ctx) error {
 		})
 	}
 
-	var department model.Department
-	if err := c.BodyParser(&department); err != nil {
+	// 指针字段：只在请求中出现时才更新，省略字段保持不变
+	type request struct {
+		Id          string  `json:"id"`
+		Name        *string `json:"name"`
+		Description *string `json:"description"`
+		Icon        *string `json:"icon"`
+		SortOrder   *int    `json:"sortOrder"`
+	}
+
+	payload := new(request)
+	if err := c.BodyParser(payload); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
-	if strings.TrimSpace(department.Id) == "" {
+	if strings.TrimSpace(payload.Id) == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Department id is required",
 		})
 	}
-	if strings.TrimSpace(department.Name) == "" {
+
+	fields := map[string]any{}
+	if payload.Name != nil {
+		name := strings.TrimSpace(*payload.Name)
+		if name == "" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Department name is required",
+			})
+		}
+		fields["name"] = name
+	}
+	if payload.Description != nil {
+		fields["description"] = *payload.Description
+	}
+	if payload.Icon != nil {
+		fields["icon"] = *payload.Icon
+	}
+	if payload.SortOrder != nil {
+		fields["sort_order"] = *payload.SortOrder
+	}
+	if len(fields) == 0 {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Department name is required",
+			"error": "No fields to update",
 		})
 	}
 
-	if err := dao.UpdateDepartment(department); err != nil {
+	if err := dao.UpdateDepartment(payload.Id, fields); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return departmentNotFound(c)
 		}
@@ -330,6 +358,18 @@ func AddDepartmentMember(c *fiber.Ctx) error {
 	if user == nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "User not found",
+		})
+	}
+
+	exists, err := dao.DepartmentMemberExists(departmentID, payload.Username)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	if exists {
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+			"error": "该成员已在部门中",
 		})
 	}
 

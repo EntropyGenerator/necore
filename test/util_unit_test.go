@@ -2,6 +2,7 @@ package necore_test
 
 import (
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -47,7 +48,12 @@ func TestUtil_SafeContentPath(t *testing.T) {
 	}
 
 	// objectID 逃逸（".." 会把目录推到 root 之外）
-	for _, badID := range []string{"..", "../x", "..\\.."} {
+	rejectedIDs := []string{"..", "../x"}
+	// 反斜杠仅在 Windows 上是路径分隔符，Linux 上是普通文件名，不能作为逃逸用例
+	if runtime.GOOS == "windows" {
+		rejectedIDs = append(rejectedIDs, "..\\..")
+	}
+	for _, badID := range rejectedIDs {
 		if _, err := util.SafeContentPath("contents", badID, "x.png"); err == nil {
 			t.Fatalf("escaping objectID %q should be rejected", badID)
 		}

@@ -55,13 +55,16 @@ type Client struct {
 	sendMu            sync.Mutex      `json:"-"`
 }
 
-// SendJSON 串行化写操作：服务端保活 ping 与 hub 广播可能并发写同一连接。
+// SendJSON 串行化写操作并设置写超时：服务端保活 ping 与 hub 广播可能并发写
+// 同一连接；卡住的客户端不应阻塞整个 hub 的广播。
 func (c *Client) SendJSON(message interface{}) error {
 	if c == nil || c.Conn == nil {
 		return nil
 	}
 	c.sendMu.Lock()
 	defer c.sendMu.Unlock()
+	_ = c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+	defer c.Conn.SetWriteDeadline(time.Time{})
 	return c.Conn.WriteJSON(message)
 }
 

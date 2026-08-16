@@ -38,7 +38,6 @@ const serverPingInterval = 20 * time.Second
 func watchServerPing(
 	client *ws.Client,
 	done <-chan struct{},
-	unregister func(reason string, unexpected bool),
 ) {
 	ticker := time.NewTicker(serverPingInterval)
 	defer ticker.Stop()
@@ -49,11 +48,12 @@ func watchServerPing(
 			return
 		case <-ticker.C:
 			if err := client.SendJSON(fiber.Map{"event": "ping", "time": time.Now().Unix()}); err != nil {
+				// 单次写失败可能是瞬时抖动，不主动断开连接；
+				// 真实断连会由读循环的 ReadMessage 报错触发注销。
 				ws.GlobalHub.AddLog(
 					fmt.Sprintf("发送保活 ping 失败：%v", err),
 					ws.WARNING,
 				)
-				unregister("连接写入失败", true)
 				return
 			}
 		}
@@ -200,7 +200,7 @@ func HandleWSConnection(c *websocket.Conn) {
 	}
 
 	go watchBotHeartbeat(client, botHeartbeatTimeout(), done, unregister)
-	go watchServerPing(client, done, unregister)
+	go watchServerPing(client, done)
 
 	for {
 		_, message, err := c.ReadMessage()
