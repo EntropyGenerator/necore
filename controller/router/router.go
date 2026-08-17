@@ -38,8 +38,6 @@ func SetupRoutes() {
 		},
 	})
 
-	// 全局限流（DDOS 防护）：按 IP 限制 API 请求频率，防止单来源打满后端。
-	// 静态文件 /contents 与 /slogan 不限流（浏览器加载图片会大量占用额度）。
 	rateLimitMax := 600
 	if v, err := strconv.Atoi(config.Config("RATE_LIMIT_MAX")); err == nil && v > 0 {
 		rateLimitMax = v

@@ -47,7 +47,6 @@ func GetUserInfo(c *fiber.Ctx) error {
 }
 
 func GetUserList(c *fiber.Ctx) error {
-	// 用户列表暴露全部用户名/权限/标签，仅限 admin 查看。
 	currentUser := c.Locals("currentUser").(model.User)
 	if !dao.ContainsGroup(currentUser.Group, "admin") {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{

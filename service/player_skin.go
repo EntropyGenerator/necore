@@ -22,8 +22,6 @@ var defaultSkinStations = []string{
 	"https://skin.mualliance.ltd",
 }
 
-// skinStations 返回皮肤站列表（Blessing Skin / Yggdrasil），
-// 可用 .env 的 SKIN_STATIONS（逗号分隔）覆盖。
 func skinStations() []string {
 	raw := strings.TrimSpace(config.Config("SKIN_STATIONS"))
 	if raw == "" {
@@ -49,7 +47,6 @@ type yggdrasilProfile struct {
 	} `json:"properties"`
 }
 
-// yggdrasilUuidByName 通过皮肤站 Yggdrasil 的姓名查找接口获取玩家 UUID。
 func yggdrasilUuidByName(station, playerName string) (string, error) {
 	client := &http.Client{Timeout: skinRequestTimeout}
 	endpoint := fmt.Sprintf(
@@ -76,7 +73,6 @@ func yggdrasilUuidByName(station, playerName string) (string, error) {
 	return data.Id, nil
 }
 
-// yggdrasilSkinUrl 通过 UUID 获取皮肤纹理 URL（解码 textures 属性）。
 func yggdrasilSkinUrl(station, uuid string) (string, error) {
 	client := &http.Client{Timeout: skinRequestTimeout}
 	endpoint := fmt.Sprintf(
@@ -125,7 +121,6 @@ func yggdrasilSkinUrl(station, uuid string) (string, error) {
 	return "", errors.New("no skin texture")
 }
 
-// ResolvePlayerSkin 依次尝试各皮肤站，返回玩家的皮肤纹理 URL。
 func ResolvePlayerSkin(playerName string) (string, error) {
 	playerName = strings.TrimSpace(playerName)
 	if playerName == "" {
@@ -147,7 +142,6 @@ func ResolvePlayerSkin(playerName string) (string, error) {
 	return "", errors.New("skin not found")
 }
 
-// GetPlayerSkin 处理器：GET /server/skin/:name
 func GetPlayerSkin(c *fiber.Ctx) error {
 	skinURL, err := ResolvePlayerSkin(c.Params("name"))
 	if err != nil {

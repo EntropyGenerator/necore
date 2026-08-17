@@ -29,10 +29,6 @@ func botHeartbeatTimeout() time.Duration {
 	return time.Duration(seconds) * time.Second
 }
 
-// watchServerPing 周期性向客户端发送应用层 ping。
-// 反向代理（如 Nginx，默认 proxy_read_timeout 60s）在长时间收不到
-// 服务端数据时会断开 WebSocket；客户端心跳只解决客户端->服务端方向，
-// 必须由服务端主动推送数据才能让代理保持连接。
 const serverPingInterval = 20 * time.Second
 
 func watchServerPing(
@@ -48,8 +44,6 @@ func watchServerPing(
 			return
 		case <-ticker.C:
 			if err := client.SendJSON(fiber.Map{"event": "ping", "time": time.Now().Unix()}); err != nil {
-				// 单次写失败可能是瞬时抖动，不主动断开连接；
-				// 真实断连会由读循环的 ReadMessage 报错触发注销。
 				ws.GlobalHub.AddLog(
 					fmt.Sprintf("发送保活 ping 失败：%v", err),
 					ws.WARNING,

@@ -24,7 +24,7 @@ type departmentTagEntity struct {
 type departmentMemberEntity struct {
 	Username string                `json:"username"`
 	Avatar   string                `json:"avatar,omitempty"`
-	Group    []string              `json:"-"` // 权限组不对外暴露（公开部门列表）
+	Group    []string              `json:"-"`
 	Tags     []departmentTagEntity `json:"tags"`
 	IsLeader bool                  `json:"isLeader"`
 }
@@ -197,7 +197,6 @@ func UpdateDepartment(c *fiber.Ctx) error {
 		})
 	}
 
-	// 指针字段：只在请求中出现时才更新，省略字段保持不变
 	type request struct {
 		Id          string  `json:"id"`
 		Name        *string `json:"name"`

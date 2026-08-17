@@ -12,27 +12,21 @@ import (
 	"gorm.io/gorm"
 )
 
-// setupTestEnv 已初始化全部数据库并把 cwd 切到临时目录。
-
 func TestDao_DocumentNodeCreationValidation(t *testing.T) {
 	setupTestEnv(t)
 
-	// 空 parentId 拒绝
 	if err := dao.CreateDocumentNode("", false, false, "n", "id-1", "admin"); err == nil {
 		t.Fatal("empty parentId should be rejected")
 	}
 
-	// parentId == nodeID 拒绝（自引用）
 	if err := dao.CreateDocumentNode("id-1", false, false, "n", "id-1", "admin"); err == nil {
 		t.Fatal("self-parent should be rejected")
 	}
 
-	// 不存在的父节点拒绝
 	if err := dao.CreateDocumentNode("missing", false, false, "n", "id-2", "admin"); err == nil {
 		t.Fatal("missing parent should be rejected")
 	}
 
-	// root 下创建文件夹与子节点
 	if err := dao.CreateDocumentNode("root", true, false, "Folder", "folder-1", "admin"); err != nil {
 		t.Fatal(err)
 	}
@@ -40,7 +34,6 @@ func TestDao_DocumentNodeCreationValidation(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// 父节点必须是文件夹：把 child-1（非文件夹）当父
 	if err := dao.CreateDocumentNode("child-1", false, false, "x", "id-3", "admin"); err == nil {
 		t.Fatal("non-folder parent should be rejected")
 	}
@@ -57,12 +50,10 @@ func TestDao_DocumentNodeCyclePrevention(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// 把 A 移入自己的子孙 B → 循环引用，必须拒绝
 	if err := dao.UpdateDocumentNodeParentId("cyc-a", "cyc-b"); err == nil {
 		t.Fatal("circular parent move should be rejected")
 	}
 
-	// 正常移动仍可用：B 移入 root
 	if err := dao.UpdateDocumentNodeParentId("cyc-b", "root"); err != nil {
 		t.Fatalf("valid move rejected: %v", err)
 	}
@@ -71,7 +62,6 @@ func TestDao_DocumentNodeCyclePrevention(t *testing.T) {
 func TestDao_DocumentNodeDeleteRecursive(t *testing.T) {
 	env := setupTestEnv(t)
 
-	// root -> folder -> child1/child2，各自带 contents 目录
 	if err := dao.CreateDocumentNode("root", true, false, "Folder", "del-folder", "admin"); err != nil {
 		t.Fatal(err)
 	}
@@ -106,7 +96,6 @@ func TestDao_DocumentNodeDeleteRecursive(t *testing.T) {
 		}
 	}
 
-	// 删除不存在的节点 → ErrRecordNotFound（服务层映射为 404）
 	if err := dao.DeleteDocumentNode("del-folder"); err != gorm.ErrRecordNotFound {
 		t.Fatalf("delete missing node err = %v, want ErrRecordNotFound", err)
 	}
@@ -140,7 +129,6 @@ func TestDao_ArticleListPagination(t *testing.T) {
 	upd("art-2", "notice", false, "2026-01-02")
 	upd("art-3", "notice", false, "2026-01-01")
 
-	// pin=true 只返回置顶
 	all, err := dao.GetArticleList("notice", 1, 10, false)
 	if err != nil || len(all) != 3 {
 		t.Fatalf("all list len=%d err=%v", len(all), err)
@@ -154,7 +142,6 @@ func TestDao_ArticleListPagination(t *testing.T) {
 		t.Fatalf("pin list len=%d first=%s err=%v", len(pinned), firstID(pinned), err)
 	}
 
-	// 分页：page2/pageSize2 → 只剩 1 条
 	page2, err := dao.GetArticleList("notice", 2, 2, false)
 	if err != nil || len(page2) != 1 || page2[0].Id != "art-3" {
 		t.Fatalf("page2 len=%d first=%s err=%v", len(page2), firstID(page2), err)
@@ -179,7 +166,6 @@ func TestDao_BotTokenHashRoundTrip(t *testing.T) {
 		t.Fatal("plain token must differ from stored hash")
 	}
 
-	// 明文可反查记录；哈希不可
 	byPlain, err := dao.GetBotTokenByPlainToken(plain)
 	if err != nil || byPlain.Name != "unit-bot" {
 		t.Fatalf("plain lookup failed: %v", err)
@@ -188,7 +174,6 @@ func TestDao_BotTokenHashRoundTrip(t *testing.T) {
 		t.Fatal("hash must not be usable as a plain token")
 	}
 
-	// 重名冲突
 	if _, _, err := dao.CreateBotToken("unit-bot"); err != dao.ErrBotTokenAlreadyExists {
 		t.Fatalf("duplicate name err = %v", err)
 	}
@@ -210,7 +195,6 @@ func TestDao_UserPasswordRoundTrip(t *testing.T) {
 	if dao.CheckUserPassword("wrong", user.Password) {
 		t.Fatal("wrong password accepted")
 	}
-	// 数据库里不能存明文
 	if user.Password == "s3cret" {
 		t.Fatal("password stored in plaintext")
 	}

@@ -210,8 +210,6 @@ func GetArticleList(c *fiber.Ctx) error {
 	if err := c.BodyParser(payload); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
-	// 分页参数约束：page 从 1 开始，page_size 限制在 1..100，
-	// 避免负数/零值导致 SQL 偏移错误或超大查询。
 	if payload.Page < 1 {
 		payload.Page = 1
 	}
