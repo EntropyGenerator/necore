@@ -11,7 +11,6 @@ import (
 	"necore/service"
 )
 
-// fakeSkinStation 模拟 Blessing Skin 的 Yggdrasil 接口。
 func fakeSkinStation(t *testing.T, players map[string]string, skinURLs map[string]string) *httptest.Server {
 	t.Helper()
 
@@ -54,8 +53,6 @@ func fakeSkinStation(t *testing.T, players map[string]string, skinURLs map[strin
 	return httptest.NewServer(mux)
 }
 
-// 验证完整解析链路：name -> uuid -> profile -> base64 textures -> 皮肤 URL，
-// 以及站点间回退（第一个站没有该玩家时尝试第二个站）。
 func TestPlayerSkin_Resolve(t *testing.T) {
 	stationA := fakeSkinStation(t, map[string]string{}, map[string]string{})
 	stationB := fakeSkinStation(t, map[string]string{"alice": "uuid-alice-0001"}, map[string]string{"uuid-alice-0001": "https://skin.example/textures/aaa"})
@@ -64,7 +61,6 @@ func TestPlayerSkin_Resolve(t *testing.T) {
 
 	t.Setenv("SKIN_STATIONS", stationA.URL+","+stationB.URL)
 
-	// A 站无玩家，B 站命中 → 返回 B 站皮肤
 	url, err := service.ResolvePlayerSkin("alice")
 	if err != nil {
 		t.Fatalf("resolve alice: %v", err)
@@ -73,18 +69,15 @@ func TestPlayerSkin_Resolve(t *testing.T) {
 		t.Fatalf("skin url = %q", url)
 	}
 
-	// 两站都没有 → 报错
 	if _, err := service.ResolvePlayerSkin("nobody"); err == nil {
 		t.Fatal("unknown player should fail")
 	}
 
-	// 空名字 → 报错
 	if _, err := service.ResolvePlayerSkin("  "); err == nil {
 		t.Fatal("empty player name should fail")
 	}
 }
 
-// 验证第一个站点命中时不会继续请求第二个站点（自动选择正确来源）。
 func TestPlayerSkin_PreferFirstStation(t *testing.T) {
 	stationA := fakeSkinStation(t, map[string]string{"bob": "uuid-bob"}, map[string]string{"uuid-bob": "https://skin.a/textures/bbb"})
 	stationB := fakeSkinStation(t, map[string]string{"bob": "uuid-bob"}, map[string]string{"uuid-bob": "https://skin.b/textures/bbb"})

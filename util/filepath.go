@@ -44,7 +44,6 @@ func SafeContentPath(root, objectID, filename string) (string, error) {
 		return "", err
 	}
 
-	// objectID 本身（如 ".."）不能逃逸出 root 目录
 	if baseDir != rootAbs && !strings.HasPrefix(baseDir, rootAbs+string(filepath.Separator)) {
 		return "", ErrInvalidFilename
 	}

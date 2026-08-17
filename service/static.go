@@ -9,10 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// ContentFileHandler serves uploaded files:
-//   - /contents/{objectId}/{filename}             (articles, documents, servers)
-//   - /contents/wiki/{itemId}/{filename}          (wiki attachments, nested under contents/wiki/)
-//
+// ContentFileHandler serves uploaded files from ./contents/{objectId}/{filename}.
 // Files belonging to a private document node (or a node under a private folder)
 // require authentication and document_admin permission; everything else
 // (articles, wiki, servers) stays public.
@@ -28,7 +25,6 @@ func ContentFileHandler(c *fiber.Ctx) error {
 	objectID := first
 	filename := rest
 
-	// wiki 附件存放在 contents/wiki/{itemId}/{filename}
 	if first == "wiki" {
 		slash := strings.IndexByte(rest, '/')
 		if slash <= 0 || slash == len(rest)-1 {

@@ -8,7 +8,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// 部门管理完整流程（源自 department 分支的 TestDepartmentRoutes，合并后保留）。
 func TestDepartmentRoutes(t *testing.T) {
 	env := setupTestEnv(t)
 
@@ -81,14 +80,11 @@ func TestDepartmentRoutes(t *testing.T) {
 	assertStatus(t, doJSON(t, env, http.MethodDelete, "/necore/department/"+deptID, env.adminToken, nil), http.StatusOK)
 }
 
-// 部门管理仅 admin 可用；普通登录用户对全部写操作应 403，删除不存在的部门应 404。
 func TestDepartment_PermissionsAndNotFound(t *testing.T) {
 	env := setupTestEnv(t)
 
-	// 公开列表匿名可读
 	assertStatus(t, doJSON(t, env, http.MethodGet, "/necore/department/", "", nil), http.StatusOK)
 
-	// 非 admin 全部写操作 403
 	cases := []struct {
 		method string
 		path   string
@@ -107,16 +103,12 @@ func TestDepartment_PermissionsAndNotFound(t *testing.T) {
 		assertStatus(t, doJSON(t, env, tc.method, tc.path, env.userToken, tc.body), http.StatusForbidden)
 	}
 
-	// 未登录访问写操作 → 401
 	assertStatus(t, doJSON(t, env, http.MethodPost, "/necore/department/create", "", fiber.Map{"name": "x"}), http.StatusUnauthorized)
 
-	// admin 删除不存在的部门 → 404
 	assertStatus(t, doJSON(t, env, http.MethodDelete, "/necore/department/missing-id", env.adminToken, nil), http.StatusNotFound)
-	// 创建部门名称为空 → 400
 	assertStatus(t, doJSON(t, env, http.MethodPost, "/necore/department/create", env.adminToken, fiber.Map{"name": "  "}), http.StatusBadRequest)
 }
 
-// 重复添加成员应返回 409；公开部门列表不应暴露权限组字段。
 func TestDepartment_MemberDuplicateAndGroupOmission(t *testing.T) {
 	env := setupTestEnv(t)
 
@@ -127,12 +119,10 @@ func TestDepartment_MemberDuplicateAndGroupOmission(t *testing.T) {
 		"username": "alice",
 	}), http.StatusOK)
 
-	// 重复添加 → 409
 	assertStatus(t, doJSON(t, env, http.MethodPost, "/necore/department/"+deptID+"/member", env.adminToken, fiber.Map{
 		"username": "alice",
 	}), http.StatusConflict)
 
-	// 公开列表不暴露 group 字段（匿名可读）
 	listResp := doJSON(t, env, http.MethodGet, "/necore/department/", "", nil)
 	if strings.Contains(string(listResp.Body), "\"group\"") {
 		t.Fatalf("public department list must not expose group, body=%s", string(listResp.Body))

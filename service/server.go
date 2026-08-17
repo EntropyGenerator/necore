@@ -78,7 +78,6 @@ func GetServerStatus(c *fiber.Ctx) error {
 		})
 	}
 
-	// SSRF 防护：只允许查询服务器列表中已配置的地址，拒绝任意的内网/外部目标。
 	req.ServerUrl = strings.TrimSpace(req.ServerUrl)
 	if req.ServerUrl == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
