@@ -4,20 +4,39 @@ import (
 	"necore/controller/middleware"
 	"necore/dao"
 	"necore/util"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-// ContentFileHandler serves uploaded files from ./contents/{objectId}/{filename}.
+// ContentFileHandler serves uploaded files:
+//   - /contents/{objectId}/{filename}             (articles, documents, servers)
+//   - /contents/wiki/{itemId}/{filename}          (wiki attachments, nested under contents/wiki/)
+//
 // Files belonging to a private document node (or a node under a private folder)
 // require authentication and document_admin permission; everything else
 // (articles, wiki, servers) stays public.
 func ContentFileHandler(c *fiber.Ctx) error {
-	objectID := c.Params("id")
-	filename := c.Params("*")
+	first := c.Params("id")
+	rest := c.Params("*")
 
-	if objectID == "" || filename == "" {
+	if first == "" || rest == "" {
 		return c.SendStatus(fiber.StatusNotFound)
+	}
+
+	baseDir := "./contents"
+	objectID := first
+	filename := rest
+
+	// wiki 附件存放在 contents/wiki/{itemId}/{filename}
+	if first == "wiki" {
+		slash := strings.IndexByte(rest, '/')
+		if slash <= 0 || slash == len(rest)-1 {
+			return c.SendStatus(fiber.StatusNotFound)
+		}
+		baseDir = "./contents/wiki"
+		objectID = rest[:slash]
+		filename = rest[slash+1:]
 	}
 
 	private, err := dao.IsDocumentNodeEffectivelyPrivate(objectID)
@@ -37,7 +56,7 @@ func ContentFileHandler(c *fiber.Ctx) error {
 		}
 	}
 
-	target, err := util.SafeContentPath("./contents", objectID, filename)
+	target, err := util.SafeContentPath(baseDir, objectID, filename)
 	if err != nil {
 		return c.SendStatus(fiber.StatusNotFound)
 	}
