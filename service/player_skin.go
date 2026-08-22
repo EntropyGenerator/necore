@@ -1,8 +1,6 @@
 package service
 
 import (
-	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -40,116 +38,40 @@ func skinStations() []string {
 	return stations
 }
 
-type yggdrasilProfile struct {
-	Properties []struct {
-		Name  string `json:"name"`
-		Value string `json:"value"`
-	} `json:"properties"`
-}
-
-func yggdrasilUuidByName(station, playerName string) (string, error) {
-	client := &http.Client{Timeout: skinRequestTimeout}
-	endpoint := fmt.Sprintf(
-		"%s/api/yggdrasil/api/users/profiles/minecraft/%s",
-		station,
-		url.PathEscape(playerName),
-	)
-	resp, err := client.Get(endpoint)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", errors.New("player not found")
-	}
-
-	var data struct {
-		Id string `json:"id"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-		return "", err
-	}
-	return data.Id, nil
-}
-
-func yggdrasilSkinUrl(station, uuid string) (string, error) {
-	client := &http.Client{Timeout: skinRequestTimeout}
-	endpoint := fmt.Sprintf(
-		"%s/api/yggdrasil/sessionserver/session/minecraft/profile/%s",
-		station,
-		uuid,
-	)
-	resp, err := client.Get(endpoint)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", errors.New("profile not found")
-	}
-
-	var profile yggdrasilProfile
-	if err := json.NewDecoder(resp.Body).Decode(&profile); err != nil {
-		return "", err
-	}
-
-	for _, property := range profile.Properties {
-		if property.Name != "textures" {
-			continue
-		}
-		raw, err := base64.StdEncoding.DecodeString(property.Value)
-		if err != nil {
-			continue
-		}
-		var textures struct {
-			Textures struct {
-				Skin struct {
-					Url string `json:"url"`
-				} `json:"SKIN"`
-			} `json:"textures"`
-		}
-		if err := json.Unmarshal(raw, &textures); err != nil {
-			continue
-		}
-		if textures.Textures.Skin.Url != "" {
-			return textures.Textures.Skin.Url, nil
-		}
-	}
-
-	return "", errors.New("no skin texture")
-}
-
-func ResolvePlayerSkin(playerName string) (string, error) {
+func ResolvePlayerAvatar(playerName string) (string, error) {
 	playerName = strings.TrimSpace(playerName)
 	if playerName == "" {
 		return "", errors.New("empty player name")
 	}
 
+	client := &http.Client{Timeout: skinRequestTimeout}
 	for _, station := range skinStations() {
-		stationUUID, err := yggdrasilUuidByName(station, playerName)
-		if err != nil || stationUUID == "" {
+		avatarURL := fmt.Sprintf(
+			"%s/avatar/player/%s",
+			station,
+			url.PathEscape(playerName),
+		)
+		resp, err := client.Head(avatarURL)
+		if err != nil {
 			continue
 		}
-		skinURL, err := yggdrasilSkinUrl(station, stationUUID)
-		if err != nil || skinURL == "" {
-			continue
+		resp.Body.Close()
+		if resp.StatusCode == http.StatusOK {
+			return avatarURL, nil
 		}
-		return skinURL, nil
 	}
 
-	return "", errors.New("skin not found")
+	return "", errors.New("avatar not found")
 }
 
 func GetPlayerSkin(c *fiber.Ctx) error {
-	skinURL, err := ResolvePlayerSkin(c.Params("name"))
+	avatarURL, err := ResolvePlayerAvatar(c.Params("name"))
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "Skin not found",
+			"error": "Avatar not found",
 		})
 	}
 	return c.JSON(fiber.Map{
-		"skin": skinURL,
+		"skin": avatarURL,
 	})
 }
